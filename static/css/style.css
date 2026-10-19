@@ -1,0 +1,103 @@
+/* General Styles */
+:root {
+    --primary-color: #2c3e50;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-bg: #ecf0f1;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+/* Tables */
+.table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead {
+    background-color: var(--primary-color);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--light-bg);
+}
+
+/* Badges */
+.badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+/* Forms */
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #34495e;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background-color: #229954;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
