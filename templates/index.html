@@ -1,167 +1,795 @@
 {% extends "base.html" %}
 
-{% block title %}Inventory Dashboard - MedSync{% endblock %}
+{% block title %}Dashboard - MedSync{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ---------- Dashboard tokens (layout tokens come from base.html) ---------- */
+    :root {
+        --green: #7BC742;
+        --green-dark: #5a9a32;
+        --amber: #f59e0b;
+        --blue: #378ADD;
+        --purple: #8b5cf6;
+        --red: #ef4444;
+        --success: #10b981;
+
+        /* Darker shades of each status colour for text, so it stays readable on light tints */
+        --green-text: #4a7f29;
+        --amber-text: #b45309;
+        --blue-text: #1f68b5;
+        --purple-text: #6d28d9;
+        --red-text: #b91c1c;
+        --success-text: #047857;
+
+        --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+        --card-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08);
+        --row-alt: #fafafa;
+        --row-hover: #f1f8eb;
+        --track: #ececec;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --green-text: #9fdc6f;
+            --amber-text: #fbbf24;
+            --blue-text: #74b3f2;
+            --purple-text: #b4a0fb;
+            --red-text: #f87171;
+            --success-text: #34d399;
+
+            --card-shadow: none;
+            --card-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.4);
+            --row-alt: rgba(255, 255, 255, 0.03);
+            --row-hover: rgba(143, 214, 88, 0.08);
+            --track: #343a34;
+        }
+    }
+
+    /* ---------- Page layout ---------- */
+    .dash {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1400px;
+    }
+
+    .dash h1, .dash h2, .dash h3 {
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .dash p { margin: 0; }
+
+    .dash-title {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .dash-subtitle {
+        margin-top: 4px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .dash .section-title {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .section-note {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .count-chip {
+        display: inline-block;
+        min-width: 24px;
+        margin-left: 8px;
+        padding: 1px 8px;
+        border-radius: var(--radius-pill);
+        background: color-mix(in srgb, var(--red) 14%, transparent);
+        color: var(--red-text);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .panel {
+        padding: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--card-shadow);
+    }
+
+    .dash-split {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .plain-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* ---------- Flash messages ---------- */
+    .flash {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+        background: color-mix(in srgb, var(--success) 12%, transparent);
+        color: var(--success-text);
+        font-weight: 600;
+    }
+
+    /* ---------- KPI cards ---------- */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-card {
+        --kpi-color: var(--green);
+        --kpi-text: var(--green-text);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--card-shadow);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow-hover);
+    }
+    .kpi-card.kpi-warning  { --kpi-color: var(--amber); --kpi-text: var(--amber-text); }
+    .kpi-card.kpi-critical { --kpi-color: var(--red);   --kpi-text: var(--red-text); }
+
+    .kpi-name {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .kpi-value {
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+    .kpi-unit {
+        margin-left: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .kpi-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--track);
+        overflow: hidden;
+    }
+    .kpi-bar > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--kpi-color);
+    }
+
+    .kpi-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .kpi-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--kpi-text);
+    }
+    .kpi-status::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--kpi-color);
+    }
+
+    .kpi-trend { color: var(--text-secondary); white-space: nowrap; }
+    .kpi-trend.is-improving { color: var(--success-text); }
+    .kpi-trend.is-worsening { color: var(--red-text); }
+
+    .kpi-desc {
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--text-secondary);
+    }
+
+    /* ---------- Tables ---------- */
+    .table-scroll {
+        overflow-x: auto;
+        margin: 0 -24px -24px;
+        border-top: 1px solid var(--border);
+    }
+    .table-scroll:focus-visible { border-radius: var(--radius-sm); }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+    .data-table th {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: left;
+        white-space: nowrap;
+        color: var(--text-muted);
+    }
+    .data-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    .data-table th:first-child, .data-table td:first-child { padding-left: 24px; }
+    .data-table th:last-child,  .data-table td:last-child  { padding-right: 24px; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:nth-child(even) { background: var(--row-alt); }
+    .data-table tbody tr { transition: background-color 0.12s ease; }
+    .data-table tbody tr:hover { background: var(--row-hover); }
+
+    .data-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    .data-table .nowrap { white-space: nowrap; }
+    .cell-strong { font-weight: 600; }
+    .cell-sub {
+        display: block;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    .is-attention { color: var(--red-text); font-weight: 700; }
+
+    .empty-state {
+        padding: 24px;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    /* ---------- Status badges ---------- */
+    .status-badge {
+        --badge-color: var(--text-secondary);
+        --badge-text: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+        color: var(--badge-text);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .status-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--badge-color);
+    }
+    .status-awaiting   { --badge-color: var(--amber);   --badge-text: var(--amber-text); }
+    .status-approved,
+    .status-ordered    { --badge-color: var(--blue);    --badge-text: var(--blue-text); }
+    .status-transit    { --badge-color: var(--purple);  --badge-text: var(--purple-text); }
+    .status-delivered,
+    .status-sufficient { --badge-color: var(--success); --badge-text: var(--success-text); }
+    .status-delayed,
+    .status-critical   { --badge-color: var(--red);     --badge-text: var(--red-text); }
+    .status-low        { --badge-color: var(--amber);   --badge-text: var(--amber-text); }
+
+    /* ---------- Alerts ---------- */
+    .alert-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .alert-card {
+        --alert-color: var(--amber);
+        --alert-text: var(--amber-text);
+        display: flex;
+        gap: 14px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--alert-color);
+        border-radius: var(--radius-md);
+        box-shadow: var(--card-shadow);
+        transition: box-shadow 0.15s ease;
+    }
+    .alert-card:hover { box-shadow: var(--card-shadow-hover); }
+    .alert-card.severity-critical { --alert-color: var(--red); --alert-text: var(--red-text); }
+
+    .alert-icon {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--alert-color) 14%, transparent);
+        color: var(--alert-text);
+    }
+    .alert-icon .icon { width: 18px; height: 18px; }
+
+    .alert-type {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--alert-text);
+    }
+    .dash .alert-title {
+        margin: 2px 0 4px;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+    .alert-message {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--text-secondary);
+    }
+
+    .all-clear {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--success-text);
+        font-weight: 600;
+    }
+
+    /* ---------- Order form ---------- */
+    .order-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field-full { grid-column: 1 / -1; }
+
+    .field label {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .field .optional { font-weight: 400; color: var(--text-muted); }
+
+    .field input,
+    .field select,
+    .field textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .field textarea { min-height: 88px; resize: vertical; }
+    .field input:hover,
+    .field select:hover,
+    .field textarea:hover { border-color: var(--text-muted); }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+        outline: none;
+        border-color: var(--green);
+        box-shadow: var(--focus-ring);
+    }
+
+    /* Invalid after the user has interacted, or when the server rejected the value */
+    .field input:user-invalid,
+    .field select:user-invalid,
+    .field textarea:user-invalid,
+    .field [aria-invalid="true"] {
+        border-color: var(--red);
+    }
+    .field input:user-invalid:focus,
+    .field select:user-invalid:focus,
+    .field [aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 30%, transparent);
+    }
+    .field input:user-valid,
+    .field select:user-valid { border-color: var(--green); }
+
+    .field-error {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--red-text);
+    }
+
+    .form-summary {
+        grid-column: 1 / -1;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--red) 12%, transparent);
+        color: var(--red-text);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .form-status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .btn-submit,
+    .btn-clear {
+        padding: 11px 24px;
+        border-radius: var(--radius-pill);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+    .btn-submit {
+        flex: 1;
+        border: none;
+        background: var(--green);
+        color: #fff;
+    }
+    .btn-submit:hover { background: var(--green-dark); }
+    .btn-clear {
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+    }
+    .btn-clear:hover {
+        border-color: var(--text-muted);
+        color: var(--text-primary);
+    }
+    .btn-submit:active,
+    .btn-clear:active { transform: translateY(1px); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1200px) {
+        .dash-split { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    @media (max-width: 576px) {
+        .panel { padding: 16px; }
+        .table-scroll { margin: 0 -16px -16px; }
+        .data-table th:first-child, .data-table td:first-child { padding-left: 16px; }
+        .data-table th:last-child,  .data-table td:last-child  { padding-right: 16px; }
+        .order-form { grid-template-columns: minmax(0, 1fr); }
+        .kpi-value { font-size: 32px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .kpi-card:hover { transform: none; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <!-- Page Heading -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1><span aria-hidden="true">💊</span> Medicine Inventory Dashboard</h1>
-            <p class="text-muted">Manage your medicine stock levels and reorder points</p>
-        </div>
-    </div>
+{% set errors = form_errors | default({}) %}
+{% set values = form_values | default({}) %}
+{% set kpi_status_labels = {'good': 'On target', 'warning': 'Needs attention', 'critical': 'Critical'} %}
+{% set alert_type_labels = {'kpi': 'Critical KPI', 'delayed': 'Delayed order', 'approval': 'Approval bottleneck', 'delivery': 'Delivery issue'} %}
 
-    <!-- Summary Stat Cards (reusable components) -->
-    <div class="row mb-5">
-        <!-- Card 1: Total Medicines -->
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Total Medicines</h6>
-                    <p class="card-text display-6">3</p>
+<div class="dash">
+    <header>
+        <h1 class="dash-title">Dashboard</h1>
+        <p class="dash-subtitle">
+            Supply chain performance and inventory as of
+            <time datetime="{{ today.isoformat() }}">{{ today.strftime('%d %B %Y') }}</time>
+        </p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    <!-- ===== 1. KPIs ===== -->
+    <section aria-labelledby="kpi-heading">
+        <div class="section-head">
+            <h2 id="kpi-heading" class="section-title">Key performance indicators</h2>
+            <span class="section-note">Compared with last month</span>
+        </div>
+
+        <ul class="kpi-grid plain-list">
+            {% for kpi in metrics %}
+            <li class="kpi-card kpi-{{ kpi.status }}">
+                <p class="kpi-name">{{ kpi.name }}</p>
+                <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
+                <div class="kpi-bar" aria-hidden="true"><span style="width: {{ kpi.progress_percent }}%"></span></div>
+                <div class="kpi-meta">
+                    <span class="kpi-status">{{ kpi_status_labels[kpi.status] }}</span>
+                    {% if kpi.trend_direction == 'flat' %}
+                    <span class="kpi-trend">No change</span>
+                    {% else %}
+                    <span class="kpi-trend {{ 'is-improving' if kpi.trend_improving else 'is-worsening' }}">
+                        <span aria-hidden="true">{{ '↑' if kpi.trend_direction == 'up' else '↓' }}</span>
+                        <span class="visually-hidden">{{ 'Up' if kpi.trend_direction == 'up' else 'Down' }}</span>
+                        {{ kpi.trend_text }}
+                    </span>
+                    {% endif %}
                 </div>
-            </div>
+                <p class="kpi-desc">{{ kpi.description }} {{ kpi.target_text }}.</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <!-- ===== 2. Request status tracking ===== -->
+    <section id="requests" class="panel" aria-labelledby="requests-heading">
+        <div class="section-head">
+            <h2 id="requests-heading" class="section-title">Reorder requests</h2>
+            <span class="section-note">{{ requests | length }} requests</span>
         </div>
 
-        <!-- Card 2: Low Stock -->
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Low Stock</h6>
-                    <p class="card-text display-6 text-warning">1</p>
+        <div class="table-scroll" role="region" aria-labelledby="requests-heading" tabindex="0">
+            {% if requests %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Medicine Name</th>
+                        <th scope="col" class="num">Quantity</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Request Date</th>
+                        <th scope="col">Expected Delivery</th>
+                        <th scope="col" class="num">Days in Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td>
+                            <span class="cell-strong">{{ r.medicine }}</span>
+                            <span class="cell-sub">{{ r.supplier }}{% if r.emergency %} · Emergency{% endif %}</span>
+                        </td>
+                        <td class="num">{{ '{:,}'.format(r.quantity) }}</td>
+                        <td><span class="status-badge status-{{ r.status_class }}">{{ r.status }}</span></td>
+                        <td class="nowrap"><time datetime="{{ r.request_date.isoformat() }}">{{ r.request_date.strftime('%d %b %Y') }}</time></td>
+                        <td class="nowrap"><time datetime="{{ r.expected_delivery.isoformat() }}">{{ r.expected_delivery.strftime('%d %b %Y') }}</time></td>
+                        <td class="num{% if r.needs_attention %} is-attention{% endif %}">
+                            {{ r.days_in_status }}
+                            {% if r.needs_attention %}<span class="visually-hidden">(needs attention)</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-state">No reorder requests yet. Place one with the form below.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ===== 3. Alerts ===== -->
+    <section aria-labelledby="alerts-heading">
+        <div class="section-head">
+            <h2 id="alerts-heading" class="section-title">
+                Alerts{% if alerts %}<span class="count-chip">{{ alerts | length }}</span>{% endif %}
+            </h2>
+        </div>
+
+        {% if alerts %}
+        <ul class="alert-grid plain-list">
+            {% for alert in alerts %}
+            <li class="alert-card severity-{{ alert.severity }}">
+                <span class="alert-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        {% if alert.type == 'kpi' %}
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        {% elif alert.type == 'delayed' %}
+                        <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
+                        {% elif alert.type == 'approval' %}
+                        <path d="M6 2h12M6 22h12M7 2v4l5 6-5 6v4M17 2v4l-5 6 5 6v4"/>
+                        {% else %}
+                        <rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>
+                        {% endif %}
+                    </svg>
+                </span>
+                <div>
+                    <p class="alert-type">
+                        {{ alert_type_labels[alert.type] }}<span class="visually-hidden">, {{ alert.severity }}</span>
+                    </p>
+                    <h3 class="alert-title">{{ alert.title }}</h3>
+                    <p class="alert-message">{{ alert.message }}</p>
                 </div>
-            </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="panel all-clear">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            No alerts. All KPIs and orders are on track.
         </div>
+        {% endif %}
+    </section>
 
-        <!-- Card 3: Critical Items -->
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Critical Items</h6>
-                    <p class="card-text display-6 text-danger">1</p>
-                </div>
+    <div class="dash-split">
+        <!-- ===== 4. Inventory overview ===== -->
+        <section class="panel" aria-labelledby="inventory-heading">
+            <div class="section-head">
+                <h2 id="inventory-heading" class="section-title">Inventory overview</h2>
             </div>
-        </div>
-    </div>
+            <p class="section-note" style="margin-bottom: 16px;">
+                Reorder points are calculated from average demand, supplier lead time and safety stock at a 95% service level.
+                Critical means stock is below safety stock.
+            </p>
 
-    <!-- Inventory Table -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <h3>Current Inventory</h3>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
+            <div class="table-scroll" role="region" aria-labelledby="inventory-heading" tabindex="0">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th scope="col">Medicine Name</th>
-                            <th scope="col">Current Stock (units)</th>
-                            <th scope="col">Reorder Point</th>
+                            <th scope="col">Medicine</th>
+                            <th scope="col" class="num">Current Stock</th>
+                            <th scope="col" class="num">Reorder Point</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Medicine 1 -->
+                        {% for item in inventory %}
                         <tr>
-                            <td>Paracetamol</td>
-                            <td>45</td>
-                            <td>50</td>
-                            <td><span class="badge bg-warning">Low Stock</span></td>
-                            <td><button class="btn btn-sm btn-primary">Edit</button></td>
+                            <td class="cell-strong">{{ item.name }}</td>
+                            <td class="num">{{ '{:,}'.format(item.current_stock) }}</td>
+                            <td class="num">{{ '{:,}'.format(item.reorder_point) }}</td>
+                            <td><span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span></td>
                         </tr>
-                        <!-- Medicine 2 -->
-                        <tr>
-                            <td>Amoxicillin</td>
-                            <td>120</td>
-                            <td>75</td>
-                            <td><span class="badge bg-success">OK</span></td>
-                            <td><button class="btn btn-sm btn-primary">Edit</button></td>
-                        </tr>
-                        <!-- Medicine 3 -->
-                        <tr>
-                            <td>Ibuprofen</td>
-                            <td>10</td>
-                            <td>80</td>
-                            <td><span class="badge bg-danger">Critical</span></td>
-                            <td><button class="btn btn-sm btn-primary">Edit</button></td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Add Medicine Form -->
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Add New Medicine</h3>
+        <!-- ===== 5. Place new order ===== -->
+        <section id="new-order" class="panel" aria-labelledby="order-heading">
+            <div class="section-head">
+                <h2 id="order-heading" class="section-title">Place new order</h2>
+            </div>
 
-            <!--
-                novalidate  = turn off the browser's default pop-ups so Bootstrap shows our messages
-                needs-validation = Bootstrap hook that the script at the bottom listens for
-            -->
-            <form method="POST" action="/add-medicine" class="needs-validation" novalidate>
+            <form id="order-form" class="order-form" method="post" action="{{ url_for('place_order') }}">
+                {% if errors %}
+                <p class="form-summary" role="alert">Please fix the highlighted fields and submit again.</p>
+                {% endif %}
 
-                <!-- Medicine Name -->
-                <div class="mb-3">
-                    <label for="medicineName" class="form-label">Medicine Name</label>
-                    <input type="text" class="form-control" id="medicineName" name="medicine_name"
-                           required minlength="2" placeholder="e.g., Paracetamol">
-                    <div class="invalid-feedback">
-                        Please enter a medicine name (at least 2 characters).
-                    </div>
+                <div class="field field-full">
+                    <label for="order-medicine">Medicine Name</label>
+                    <select id="order-medicine" name="medicine" required
+                            {% if errors.medicine %}aria-invalid="true" aria-describedby="order-medicine-error"{% endif %}>
+                        <option value="" disabled {% if not values.get('medicine') %}selected{% endif %}>Select a medicine</option>
+                        {% for name in medicine_options %}
+                        <option value="{{ name }}" {% if values.get('medicine') == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.medicine %}<span id="order-medicine-error" class="field-error">{{ errors.medicine }}</span>{% endif %}
                 </div>
 
-                <!-- Current Stock -->
-                <div class="mb-3">
-                    <label for="currentStock" class="form-label">Current Stock (units)</label>
-                    <input type="number" class="form-control" id="currentStock" name="current_stock"
-                           required min="0" step="1" placeholder="e.g., 100">
-                    <div class="invalid-feedback">
-                        Stock must be a whole number of 0 or more.
-                    </div>
+                <div class="field">
+                    <label for="order-quantity">Quantity (units)</label>
+                    <input type="number" id="order-quantity" name="quantity" required min="1" max="100000" step="1"
+                           inputmode="numeric" placeholder="e.g. 250" value="{{ values.get('quantity', '') }}"
+                           {% if errors.quantity %}aria-invalid="true" aria-describedby="order-quantity-error"{% endif %}>
+                    {% if errors.quantity %}<span id="order-quantity-error" class="field-error">{{ errors.quantity }}</span>{% endif %}
                 </div>
 
-                <!-- Reorder Point -->
-                <div class="mb-3">
-                    <label for="reorderPoint" class="form-label">Reorder Point (units)</label>
-                    <input type="number" class="form-control" id="reorderPoint" name="reorder_point"
-                           required min="0" step="1" placeholder="e.g., 50">
-                    <div class="invalid-feedback">
-                        Reorder point must be a whole number of 0 or more.
-                    </div>
+                <div class="field">
+                    <label for="order-delivery">Expected Delivery</label>
+                    <input type="date" id="order-delivery" name="expected_delivery" required
+                           min="{{ today.isoformat() }}" value="{{ values.get('expected_delivery', '') }}"
+                           {% if errors.expected_delivery %}aria-invalid="true" aria-describedby="order-delivery-error"{% endif %}>
+                    {% if errors.expected_delivery %}<span id="order-delivery-error" class="field-error">{{ errors.expected_delivery }}</span>{% endif %}
                 </div>
 
-                <!-- Unit Cost -->
-                <div class="mb-3">
-                    <label for="unitCost" class="form-label">Unit Cost (R)</label>
-                    <input type="number" class="form-control" id="unitCost" name="unit_cost"
-                           step="0.01" min="0.01" required placeholder="e.g., 12.50">
-                    <div class="invalid-feedback">
-                        Please enter a cost greater than R0.00.
-                    </div>
+                <div class="field field-full">
+                    <label for="order-supplier">Supplier</label>
+                    <select id="order-supplier" name="supplier" required
+                            {% if errors.supplier %}aria-invalid="true" aria-describedby="order-supplier-error"{% endif %}>
+                        <option value="" disabled {% if not values.get('supplier') %}selected{% endif %}>Select a supplier</option>
+                        {% for name in supplier_options %}
+                        <option value="{{ name }}" {% if values.get('supplier') == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.supplier %}<span id="order-supplier-error" class="field-error">{{ errors.supplier }}</span>{% endif %}
                 </div>
 
-                <button type="submit" class="btn btn-success w-100">Add Medicine</button>
+                <div class="field field-full">
+                    <label for="order-notes">Notes <span class="optional">(optional)</span></label>
+                    <textarea id="order-notes" name="notes" maxlength="500" placeholder="Reason for the order, urgency, special handling…"
+                              {% if errors.notes %}aria-invalid="true" aria-describedby="order-notes-error"{% endif %}>{{ values.get('notes', '') }}</textarea>
+                    {% if errors.notes %}<span id="order-notes-error" class="field-error">{{ errors.notes }}</span>{% endif %}
+                </div>
+
+                <p class="form-status field-full">
+                    New orders start as <span class="status-badge status-awaiting">Awaiting Approval</span>
+                </p>
+
+                <div class="form-actions field-full">
+                    <button type="submit" class="btn-submit">Submit Order</button>
+                    <button type="button" class="btn-clear" id="order-clear">Clear</button>
+                </div>
             </form>
-        </div>
+        </section>
     </div>
 </div>
+{% endblock %}
 
-<!-- Bootstrap client-side validation script -->
+{% block scripts %}
 <script>
     (() => {
-        'use strict';
-        const forms = document.querySelectorAll('.needs-validation');
-        Array.from(forms).forEach((form) => {
-            form.addEventListener('submit', (event) => {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
+        const form = document.getElementById('order-form');
+        if (!form) return;
+
+        // Clear empties every field, including values re-filled after a server-side error
+        document.getElementById('order-clear').addEventListener('click', () => {
+            form.reset();
+            form.querySelectorAll('input, select, textarea').forEach((el) => {
+                el.value = '';
+                el.removeAttribute('aria-invalid');
+            });
+            form.querySelectorAll('.field-error, .form-summary').forEach((el) => el.remove());
+            document.getElementById('order-medicine').focus();
         });
+
+        // After a rejected submission, take the user straight to the first problem
+        const firstInvalid = form.querySelector('[aria-invalid="true"]');
+        if (firstInvalid) firstInvalid.focus();
     })();
 </script>
 {% endblock %}

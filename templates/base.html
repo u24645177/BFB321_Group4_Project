@@ -3,129 +3,512 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>{% block title %}MedSync{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/medsync-mark.png') }}">
 
-    <!-- Bootstrap CSS -->
+    <!-- Match Bootstrap's component theme to the OS setting (runs before paint to avoid a flash) -->
+    <script>
+        (function () {
+            var mq = window.matchMedia('(prefers-color-scheme: dark)');
+            function apply() { document.documentElement.setAttribute('data-bs-theme', mq.matches ? 'dark' : 'light'); }
+            apply();
+            mq.addEventListener('change', apply);
+        })();
+    </script>
+
+    <!-- Bootstrap CSS (still used by page templates such as index.html) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Your custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* ---------- Design tokens ---------- */
+        :root {
+            --primary: #7BC742;
+            --primary-dark: #5a9a32;
+            --bg: #f5f5f5;
+            --sidebar-bg: #f0f0f0;
+            --surface: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border: #e0e0e0;
+            --focus-ring: 0 0 0 3px rgba(123, 199, 66, 0.45);
+
+            --sidebar-width: 280px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-pill: 24px;
+            --font-sans: Arial, Helvetica, "Helvetica Neue", system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #8fd658;
+                --primary-dark: #6fb33f;
+                --bg: #121412;
+                --sidebar-bg: #1b1e1b;
+                --surface: #222622;
+                --text-primary: #f2f2f2;
+                --text-secondary: #a8a8a8;
+                --text-muted: #7d7d7d;
+                --border: #343a34;
+                --focus-ring: 0 0 0 3px rgba(143, 214, 88, 0.5);
+            }
+        }
+
+        /* ---------- Base ---------- */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        :focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 16px;
+            z-index: 1000;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--primary-dark);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .skip-link:focus { top: 16px; }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ---------- Layout ---------- */
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ---------- Sidebar ---------- */
+        .sidebar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+            height: 100vh;
+            padding: 32px 24px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: inherit;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Full logo (mark + name + tagline) is the default; the wordmark is used on
+           mobile, and the mark + live text lockup in dark mode where the logo's
+           dark lettering would disappear against the sidebar. */
+        /* The logo PNGs have solid white backgrounds: multiply blends that white
+           into the sidebar in light mode; in dark mode the mark shows as a rounded tile. */
+        .brand-logo-full,
+        .brand-logo-wordmark { mix-blend-mode: multiply; }
+
+        .brand-logo-full {
+            display: block;
+            width: 180px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .brand-logo-wordmark {
+            display: none;
+            width: auto;
+            height: 44px;
+        }
+
+        .brand-lockup {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .brand-mark {
+            width: 80px;
+            height: auto;
+            margin-bottom: 12px;
+            border-radius: var(--radius-md);
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .brand-label {
+            margin-top: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .btn-order {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-pill);
+            background-color: var(--primary);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        .btn-order:hover { background-color: var(--primary-dark); color: #fff; }
+        .btn-order:active { transform: translateY(1px); }
+
+        .sidebar-nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .nav-item-link:hover {
+            background-color: var(--surface);
+            color: var(--text-primary);
+        }
+        .nav-item-link[aria-current="page"] {
+            background-color: var(--surface);
+            color: var(--primary-dark);
+        }
+        .nav-item-link[aria-disabled="true"] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ---------- Main area ---------- */
+        .main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 32px;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search {
+            position: relative;
+            flex: 1;
+            max-width: 420px;
+        }
+        .search .icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+        .search input {
+            width: 100%;
+            padding: 10px 16px 10px 46px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9375rem;
+        }
+        .search input::placeholder { color: var(--text-muted); }
+        .search input:focus { border-color: var(--primary); }
+
+        .category {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .category label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .category select {
+            min-width: 180px;
+            padding: 6px 32px 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background-color: var(--surface);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .category select:focus { border-color: var(--primary); }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+        .avatar {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            font-weight: 700;
+        }
+        .profile-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+        .profile-greeting {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+        .profile-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .content {
+            flex: 1;
+            padding: 32px;
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 992px) {
+            .topbar { flex-wrap: wrap; padding: 16px 24px; }
+            .search { flex-basis: 100%; max-width: none; order: 3; }
+            .content { padding: 24px; }
+        }
+
+        @media (max-width: 768px) {
+            .app-shell { flex-direction: column; }
+
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 16px;
+                padding: 16px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .brand { flex-direction: row; align-items: center; gap: 12px; text-align: left; }
+            .brand-logo-full { display: none; }
+            .brand-logo-wordmark { display: block; }
+            .brand-lockup { flex-direction: row; gap: 8px; }
+            .brand-mark { width: 40px; margin-bottom: 0; }
+            .brand-name { font-size: 18px; }
+            .brand-label { margin-top: 0; }
+            .btn-order { width: auto; margin-left: auto; }
+            .sidebar-nav { flex-basis: 100%; }
+            .sidebar-nav ul { flex-direction: row; flex-wrap: wrap; }
+
+            .topbar { padding: 16px; }
+            .category { flex: 1; }
+            .category select { width: 100%; min-width: 0; }
+            .content { padding: 16px; }
+        }
+
+        /* Placed after the responsive rules so it wins at every width */
+        @media (prefers-color-scheme: dark) {
+            .brand-logo-full,
+            .brand-logo-wordmark { display: none; }
+            .brand-lockup { display: flex; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light" style="background-color: #f8f9fa; border-bottom: 2px solid #90EE90;">
-    <div class="container-fluid">
-        <!-- Logo Placeholder -->
-        <a class="navbar-brand" href="/">
-            <!-- TODO: Add MedSync logo image here -->
-            <span style="font-size: 24px; font-weight: bold; color: #2d5016;"><span aria-hidden="true">🏥</span> MedSync</span>
-        </a>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
-        <!-- Mobile Toggle Button -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <div class="app-shell">
+        <!-- ===== Sidebar ===== -->
+        <aside class="sidebar" aria-label="Sidebar">
+            {% block sidebar %}
+            <a class="brand" href="{{ url_for('index') }}" aria-label="MedSync dashboard home">
+                <img class="brand-logo-full" src="{{ url_for('static', filename='images/medsync-logo.png') }}"
+                     alt="" width="452" height="552">
+                <img class="brand-logo-wordmark" src="{{ url_for('static', filename='images/medsync-wordmark.png') }}"
+                     alt="" width="394" height="166">
+                <span class="brand-lockup">
+                    <img class="brand-mark" src="{{ url_for('static', filename='images/medsync-mark.png') }}"
+                         alt="" width="232" height="224">
+                    <span class="brand-name">MedSync</span>
+                </span>
+                <span class="brand-label">Dashboard</span>
+            </a>
 
-        <!-- Navigation Links -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <!-- Dashboard Link (the working page) -->
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/" style="color: #2d5016; font-weight: 500;">Dashboard</a>
-                </li>
+            <!-- TODO: Point this at the order page once that route exists -->
+            <button type="button" class="btn-order" id="orderMoreBtn">ORDER MORE</button>
 
-                <!-- Orders Link (placeholder - built in a later step) -->
-                <li class="nav-item">
-                    <a class="nav-link disabled" aria-disabled="true" href="#" title="Coming in a later step" style="font-weight: 500;">Orders</a>
-                </li>
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <ul>
+                    {% block sidebar_nav %}
+                    <!-- TODO: Swap href="#" for url_for('settings') / url_for('analytics') once those routes exist -->
+                    <li>
+                        <a class="nav-item-link" href="#" aria-disabled="true" title="Coming in a later step"
+                           {% if request.endpoint == 'settings' %}aria-current="page"{% endif %}>
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-item-link" href="#" aria-disabled="true" title="Coming in a later step"
+                           {% if request.endpoint == 'analytics' %}aria-current="page"{% endif %}>
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <line x1="18" y1="20" x2="18" y2="10"/>
+                                <line x1="12" y1="20" x2="12" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    {% endblock %}
+                </ul>
+            </nav>
+            {% endblock %}
+        </aside>
 
-                <!-- Reports Link (placeholder - built in a later step) -->
-                <li class="nav-item">
-                    <a class="nav-link disabled" aria-disabled="true" href="#" title="Coming in a later step" style="font-weight: 500;">Reports</a>
-                </li>
+        <!-- ===== Main area ===== -->
+        <div class="main">
+            {% block topbar %}
+            <header class="topbar">
+                <form class="search" id="search-form" role="search" action="{{ url_for('index') }}" method="get">
+                    <label for="site-search" class="visually-hidden">Search medicines</label>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="search" id="site-search" name="q" placeholder="Search medicines…"
+                           value="{{ request.args.get('q', '') }}" autocomplete="off">
+                </form>
 
-                <!-- Profile Dropdown -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" style="color: #2d5016; font-weight: 500;">
-                        <span aria-hidden="true">👤</span> Profile
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <!-- Placeholder: User info to be filled in later -->
-                        <li><span class="dropdown-item-text">[User name to be filled in]</span></li>
-                        <li><hr class="dropdown-divider"></li>
+                <div class="category">
+                    <label for="category-select">Medicine category</label>
+                    <!-- Submitted with the search form so search + category filter together -->
+                    <select id="category-select" name="category" form="search-form"
+                            onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+                        {% block category_options %}
+                        {% set current_category = request.args.get('category', 'all') %}
+                        {% for value, label in [('all', 'All categories'), ('antibiotics', 'Antibiotics'), ('analgesics', 'Analgesics'), ('antiretrovirals', 'Antiretrovirals'), ('vaccines', 'Vaccines')] %}
+                        <option value="{{ value }}" {% if value == current_category %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                        {% endblock %}
+                    </select>
+                </div>
 
-                        <!-- Settings Placeholder -->
-                        <li><a class="dropdown-item" href="#">Settings (Placeholder)</a></li>
+                <div class="profile">
+                    <!-- TODO: Replace with the logged-in user's details once authentication exists (Step 4) -->
+                    <span class="avatar" aria-hidden="true">U</span>
+                    <div class="profile-text">
+                        <span class="profile-greeting">Hello!</span>
+                        <span class="profile-name">Username</span>
+                    </div>
+                </div>
+            </header>
+            {% endblock %}
 
-                        <!-- Help Placeholder -->
-                        <li><a class="dropdown-item" href="#">Help (Placeholder)</a></li>
-
-                        <li><hr class="dropdown-divider"></li>
-
-                        <!-- Logout Placeholder -->
-                        <li><a class="dropdown-item" href="#">Logout (Placeholder)</a></li>
-
-                        <!-- TODO: User authentication to be implemented in Step 4 -->
-                    </ul>
-                </li>
-            </ul>
+            <main id="main-content" class="content" tabindex="-1">
+                {% block content %}
+                <!-- Other pages' content goes here -->
+                {% endblock %}
+            </main>
         </div>
     </div>
-</nav>
-
-    <!-- Main Content -->
-    <main class="container mt-5">
-        {% block content %}
-        <!-- Other pages' content goes here -->
-        {% endblock %}
-    </main>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Footer -->
-<footer style="background-color: #f8f9fa; border-top: 2px solid #90EE90; margin-top: 50px; padding: 30px 0;">
-    <div class="container">
-        <div class="row">
-            <!-- Contact Info -->
-            <div class="col-md-4">
-                <h6 style="color: #2d5016; font-weight: bold;">Contact Us</h6>
-                <p style="color: #666;">
-                    <!-- TODO: Add contact information here -->
-                    Email: [contact@medsync.co.za to be filled in]<br>
-                    Phone: [+27 XXX XXX XXXX to be filled in]
-                </p>
-            </div>
-
-            <!-- About Section -->
-            <div class="col-md-4">
-                <h6 style="color: #2d5016; font-weight: bold;">About MedSync</h6>
-                <p style="color: #666;">
-                    <!-- TODO: Add MedSync description here -->
-                    Our information about digitizing medicine supply chains to be filled in later.
-                </p>
-            </div>
-
-            <!-- Dates -->
-            <div class="col-md-4">
-                <h6 style="color: #2d5016; font-weight: bold;">Version Info</h6>
-                <p style="color: #666;">
-                    Current Date: <span id="currentDate"></span><br>
-                    Last Updated: 19 October 2026
-                </p>
-            </div>
-        </div>
-
-        <!-- Copyright -->
-        <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 20px; text-align: center; color: #999;">
-            <p>&copy; 2026 MedSync. BFB 321 Group Project - University of Pretoria</p>
-        </div>
-    </div>
-</footer>
-
-<!-- JavaScript to display current date -->
-<script>
-    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-ZA');
-</script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
