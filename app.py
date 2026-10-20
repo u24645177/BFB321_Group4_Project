@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 
+from data import dashboard
+
 # Create Flask app
 app = Flask(__name__)
 
@@ -41,7 +43,22 @@ KPIS = [
 @app.route('/')
 def index():
     """Display the inventory dashboard"""
-    return render_template('index.html', medicines=MEDICINES)
+    return render_template('index.html', **dashboard.get_dashboard_context())
+
+
+# Route: Place a new reorder request from the dashboard form
+@app.route('/orders', methods=['POST'])
+def place_order():
+    """Validate the order form and add it as an Awaiting Approval request"""
+    order, errors = dashboard.validate_order(request.form)
+    if errors:
+        # Re-render with the submitted values so the user can fix the errors
+        return render_template('index.html', **dashboard.get_dashboard_context(),
+                               form_errors=errors, form_values=request.form), 400
+
+    dashboard.add_request(order)
+    flash(f"Order for {order['quantity']:,} × {order['medicine']} submitted. Status: Awaiting Approval.", 'success')
+    return redirect(url_for('index', _anchor='requests'))
 
 
 # Route: Handle form submission

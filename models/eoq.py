@@ -31,8 +31,8 @@ def calculate_orders_per_year(demand, order_qty):
 
 # Reorder Point Calculation Function
 def calculate_reorder_point(average_daily_demand, lead_time_days, safety_stock):
-    if average_daily_demand <= 0:
-        raise ValueError("Average daily demand must be a positive number")
+    if average_daily_demand < 0:
+        raise ValueError("Average daily demand cannot be negative")
     if lead_time_days <= 0:
         raise ValueError("Lead time must be a positive number")
     if safety_stock < 0:
@@ -41,10 +41,10 @@ def calculate_reorder_point(average_daily_demand, lead_time_days, safety_stock):
 
 # Safety Stock Calculation Function
 def calculate_safety_stock(z_score, demand_std_dev, lead_time_days):
-    if z_score <= 0:
-        raise ValueError("Z-score must be a positive number")
-    if demand_std_dev <= 0:
-        raise ValueError("Demand standard deviation must be a positive number")
+    if z_score < 0:
+        raise ValueError("Z-score cannot be negative")
+    if demand_std_dev < 0:
+        raise ValueError("Demand standard deviation cannot be negative")
     if lead_time_days <= 0:
         raise ValueError("Lead time must be a positive number")
     return z_score * demand_std_dev * math.sqrt(lead_time_days)

@@ -22,7 +22,7 @@ from models.eoq import (
     calculate_reorder_point,
     calculate_safety_stock,
     calculate_total_annual_cost,
-    orders_per_year
+    calculate_orders_per_year
 )
 
 
@@ -234,13 +234,13 @@ class TestOrdersPerYear:
         Example: Demand = 1000, Order qty = 100
         Expected = 1000 / 100 = 10 orders per year
         """
-        result = orders_per_year(1000, 100)
+        result = calculate_orders_per_year(1000, 100)
         assert result == 10
 
     def test_orders_per_year_with_eoq(self):
         """Test orders per year using the EOQ as the order quantity."""
         eoq = calculate_eoq(1000, 50, 5)
-        result = orders_per_year(1000, eoq)
+        result = calculate_orders_per_year(1000, eoq)
         expected = 1000 / eoq
         assert abs(result - expected) < 0.01
         assert result > 0
@@ -248,15 +248,15 @@ class TestOrdersPerYear:
     def test_orders_per_year_invalid_order_qty(self):
         """Test orders per year raises error with zero or negative order qty."""
         with pytest.raises(ValueError):
-            orders_per_year(1000, 0)
+            calculate_orders_per_year(1000, 0)
 
         with pytest.raises(ValueError):
-            orders_per_year(1000, -50)
+            calculate_orders_per_year(1000, -50)
 
     def test_orders_per_year_invalid_demand(self):
         """Test orders per year with negative demand."""
         with pytest.raises(ValueError):
-            orders_per_year(-1000, 100)
+            calculate_orders_per_year(-1000, 100)
 
 
 class TestIntegration:
@@ -290,7 +290,7 @@ class TestIntegration:
         tac = calculate_total_annual_cost(annual_demand, eoq, ordering_cost, holding_cost)
         assert tac > 0
 
-        orders = orders_per_year(annual_demand, eoq)
+        orders = calculate_orders_per_year(annual_demand, eoq)
         assert orders > 0
 
         assert eoq < annual_demand
@@ -315,7 +315,7 @@ class TestIntegration:
         ss = calculate_safety_stock(z_score_95, demand_variability, lead_time_days)
         rop = calculate_reorder_point(daily_demand, lead_time_days, ss)
         tac = calculate_total_annual_cost(annual_demand, eoq, ordering_cost, unit_holding_cost)
-        orders = orders_per_year(annual_demand, eoq)
+        orders = calculate_orders_per_year(annual_demand, eoq)
 
         assert eoq > 100
         assert rop > ss
