@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import page_header %}
+
+{% block title %}Reorder Request - MedSync{% endblock %}
+
+{% block content %}
+{{ page_header('📦 Reorder Request', 'Request a replenishment order from the central depot') }}
+
+<div class="row">
+    <div class="col-md-10 col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('reorder') }}" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="medicine" class="form-label">Medicine</label>
+                        <select class="form-select" id="medicine" name="medicine" required>
+                            <option value="" disabled {% if not request.args.medicine %}selected{% endif %}>Choose a medicine…</option>
+                            {% for med in medicines %}
+                            <option value="{{ med.name }}" {% if request.args.medicine == med.name %}selected{% endif %}>
+                                {{ med.name }} ({{ med.stock }} in stock)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Select the medicine to reorder.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="facility" class="form-label">Requesting Facility</label>
+                        <select class="form-select" id="facility" name="facility" required>
+                            <option value="" disabled selected>Choose a facility…</option>
+                            {% for facility in facilities %}
+                            <option>{{ facility }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Select the facility placing the order.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label for="quantity" class="form-label">Quantity (units)</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity"
+                                   required min="1" step="1" placeholder="e.g., 740" aria-describedby="quantityHelp">
+                            <div id="quantityHelp" class="form-text">Tip: order the EOQ to minimise total cost.</div>
+                            <div class="invalid-feedback">Quantity must be a whole number of at least 1.</div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label for="requiredBy" class="form-label">Required By</label>
+                            <input type="date" class="form-control" id="requiredBy" name="required_by" required>
+                            <div class="invalid-feedback">Choose a date from today onwards.</div>
+                        </div>
+                    </div>
+
+                    <fieldset class="mb-3">
+                        <legend class="form-label fs-6">Priority</legend>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="priority" id="priorityRoutine" value="Routine" checked>
+                            <label class="form-check-label" for="priorityRoutine">Routine</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="priority" id="priorityUrgent" value="Urgent">
+                            <label class="form-check-label" for="priorityUrgent">Urgent</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="priority" id="priorityEmergency" value="Emergency">
+                            <label class="form-check-label" for="priorityEmergency">Emergency</label>
+                        </div>
+                    </fieldset>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes <span class="text-muted">(optional)</span></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="500"
+                                  placeholder="e.g., Increased demand due to flu season"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Don't allow "Required By" dates in the past
+    document.getElementById('requiredBy').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

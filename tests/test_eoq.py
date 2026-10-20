@@ -26,6 +26,8 @@ from models.eoq import (
 )
 
 
+
+    
 class TestEOQ:
     """Test suite for EOQ calculations."""
 
@@ -37,10 +39,8 @@ class TestEOQ:
         Expected EOQ ≈ 141.42 units
         Formula: √(2 × 1000 × 50 / 5) = √20000 ≈ 141.42
         """
-        result = calculate_eoq(1000, 50, 5)
-        expected = math.sqrt((2 * 1000 * 50) / 5)
-        assert abs(result - expected) < 0.01
-
+        assert calculate_eoq(1000, 50, 5) == pytest.approx(141.42, rel=0.01)
+    
     def test_calculate_eoq_edge_case_low_demand(self):
         """Test EOQ with very low annual demand."""
         result = calculate_eoq(100, 50, 5)

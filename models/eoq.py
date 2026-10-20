@@ -1,176 +1,89 @@
 """
 Supply Chain Module: Economic Order Quantity (EOQ) Calculations
-
-This module provides functions to calculate optimal inventory management metrics
-for the MedSync medicine supply chain system.
-
-It is a standalone module: it does NOT import Flask, the database, or any
-framework code. The API layer (Step 4) calls these functions directly.
-
-Replenishment policy:
-    These functions together define HOW reorder thresholds and order quantities
-    are determined, rather than using predefined reorder levels. Order quantity
-    comes from the EOQ; the reorder point is calculated from average demand,
-    supplier lead time and safety stock; safety stock is sized from demand
-    variability and the target service level. In other words, the thresholds
-    shown on the dashboard are calculated, not hard-coded.
-
-Functions:
-    - calculate_eoq(): Calculate Economic Order Quantity
-    - calculate_reorder_point(): Calculate when to reorder
-    - calculate_safety_stock(): Calculate buffer stock
-    - calculate_total_annual_cost(): Calculate ordering + holding costs
-    - orders_per_year(): Calculate how many orders are placed per year
 """
-
 import math
 
-
-def calculate_eoq(annual_demand, ordering_cost, holding_cost):
-    """
-    Calculate Economic Order Quantity (EOQ).
-
-    EOQ determines the optimal order quantity that minimizes total inventory costs.
-
-    Args:
-        annual_demand (float): Annual demand in units
-        ordering_cost (float): Cost per order
-        holding_cost (float): Cost per unit per year
-
-    Returns:
-        float: Optimal order quantity (units)
-
-    Formula:
-        EOQ = √(2 × D × S / H)
-        where D = annual demand, S = ordering cost, H = holding cost
-
-    Assumptions:
-        - Demand is known and constant throughout the year.
-        - Ordering cost and holding cost per unit are fixed.
-        - The full order quantity arrives in a single delivery.
-        - No stockouts and no quantity (bulk) discounts.
-    """
-    if holding_cost <= 0 or ordering_cost < 0 or annual_demand < 0:
-        raise ValueError("holding_cost must be positive; ordering_cost and annual_demand must be non-negative")
-
-    eoq = math.sqrt((2 * annual_demand * ordering_cost) / holding_cost)
-    return eoq
+# EOQ Calculation Functions
+def calculate_eoq(demand, order_cost, hold_cost):
+    if hold_cost <= 0:
+        raise ValueError("Holding cost must be greater than 0")
+    if demand < 0:
+        raise ValueError("Demand cannot be negative")
+    return math.sqrt((2 * demand * order_cost) / hold_cost)
 
 
+def calculate_eoq_with_safety_stock(demand, order_cost, hold_cost, safety_stock):
+    if demand <= 0:
+        raise ValueError("Demand must be a positive number")
+    if order_cost <= 0:
+        raise ValueError("Ordering cost must be a positive number")
+    if hold_cost <= 0 or safety_stock < 0:
+        raise ValueError("Holding cost and safety stock must be positive numbers")
+    return math.sqrt((2 * (demand + safety_stock) * order_cost) / hold_cost)
+
+# Orders Per Year Calculation Function
+def calculate_orders_per_year(demand, order_qty):
+    if demand <= 0:
+        raise ValueError("Demand must be a positive number")
+    if order_qty <= 0:
+        raise ValueError("Order quantity must be a positive number")
+    return demand / order_qty
+
+# Reorder Point Calculation Function
 def calculate_reorder_point(average_daily_demand, lead_time_days, safety_stock):
-    """
-    Calculate Reorder Point (ROP).
+    if average_daily_demand <= 0:
+        raise ValueError("Average daily demand must be a positive number")
+    if lead_time_days <= 0:
+        raise ValueError("Lead time must be a positive number")
+    if safety_stock < 0:
+        raise ValueError("Safety stock must be a non-negative number")
+    return (average_daily_demand * lead_time_days) + safety_stock
 
-    ROP tells us when to place a new order to avoid stockouts.
-
-    Args:
-        average_daily_demand (float): Average daily demand in units
-        lead_time_days (int): Supplier lead time in days
-        safety_stock (float): Safety stock buffer in units
-
-    Returns:
-        float: Reorder point in units
-
-    Formula:
-        ROP = (Average Daily Demand × Lead Time) + Safety Stock
-
-    Assumptions:
-        - Average daily demand and supplier lead time are reasonably stable.
-        - Safety stock absorbs the normal variation in demand during lead time.
-    """
-    if average_daily_demand < 0 or lead_time_days < 0 or safety_stock < 0:
-        raise ValueError("All parameters must be non-negative")
-
-    rop = (average_daily_demand * lead_time_days) + safety_stock
-    return rop
-
-
+# Safety Stock Calculation Function
 def calculate_safety_stock(z_score, demand_std_dev, lead_time_days):
-    """
-    Calculate Safety Stock (SS).
+    if z_score <= 0:
+        raise ValueError("Z-score must be a positive number")
+    if demand_std_dev <= 0:
+        raise ValueError("Demand standard deviation must be a positive number")
+    if lead_time_days <= 0:
+        raise ValueError("Lead time must be a positive number")
+    return z_score * demand_std_dev * math.sqrt(lead_time_days)
 
-    Safety stock is buffer inventory to protect against demand variability.
+# Total Annual Cost Calculation Function
+def calculate_total_annual_cost(demand, order_qty, order_cost, hold_cost):
+    if demand <= 0:
+        raise ValueError("Demand must be a positive number")
+    if order_qty <= 0:
+        raise ValueError("Order quantity must be a positive number")
+    if order_cost <= 0:
+        raise ValueError("Ordering cost must be a positive number")
+    if hold_cost <= 0:
+        raise ValueError("Holding cost must be a positive number")
+    ordering = (demand / order_qty) * order_cost
+    holding = (order_qty / 2) * hold_cost
+    return ordering + holding
 
-    Args:
-        z_score (float): Z-score for service level (1.65 for 95%, 2.33 for 99%)
-        demand_std_dev (float): Standard deviation of daily demand
-        lead_time_days (int): Supplier lead time in days
+if __name__ == "__main__":
+    # Example usage of the functions
+    # Defining placeholder variables for demonstration purposes. In a real-world scenario, these would beprovided by the user or another part of the system. At the next stage we will link these to the GUI and database to allow for dynamic input and output.
+    annual_demand = 12000
+    ordering_cost = 50
+    holding_cost = 2
+    eoq = calculate_eoq(annual_demand, ordering_cost, holding_cost)
+    print("Optimal order quantity:", round(eoq, 2))
 
-    Returns:
-        float: Safety stock in units
+    n_orders = calculate_orders_per_year(annual_demand, eoq)
+    print("Number of orders per year:", round(n_orders, 2)) 
 
-    Formula:
-        SS = Z × σ × √(Lead Time)
-        where Z = z-score, σ = std dev, Lead Time = days
+    days_between_orders = 365 / n_orders
+    print("Days between orders:", round(days_between_orders, 2))
+        
+    rop = calculate_reorder_point(10, 5, 20)
+    print("Reorder Point with safety stock:", rop)
+    
+    ss = calculate_safety_stock(1.65, 5, 7)
+    print("Safety Stock:", round(ss, 2))
+    
+    total_cost = calculate_total_annual_cost(annual_demand, eoq, ordering_cost, holding_cost)
+    print("Total annual cost at EOQ:", round(total_cost, 2))
 
-    Assumptions:
-        - Daily demand is roughly normally distributed.
-        - Lead time is constant; only demand varies.
-        - The z-score matches the chosen service level (e.g. 1.65 = 95%).
-    """
-    if z_score < 0 or demand_std_dev < 0 or lead_time_days < 0:
-        raise ValueError("All parameters must be non-negative")
-
-    safety_stock = z_score * demand_std_dev * math.sqrt(lead_time_days)
-    return safety_stock
-
-
-def calculate_total_annual_cost(annual_demand, order_quantity, ordering_cost, holding_cost):
-    """
-    Calculate Total Annual Inventory Cost.
-
-    Combines ordering costs and holding costs.
-
-    Args:
-        annual_demand (float): Annual demand in units
-        order_quantity (float): Order quantity per order
-        ordering_cost (float): Cost per order
-        holding_cost (float): Cost per unit per year
-
-    Returns:
-        float: Total annual cost in currency
-
-    Formula:
-        TAC = (D/Q × S) + (Q/2 × H)
-        where D = demand, Q = order qty, S = ordering cost, H = holding cost
-
-    Assumptions:
-        - Demand is constant and ordering/holding costs are fixed.
-        - Average inventory held is half the order quantity (Q/2).
-        - Costs scale linearly with quantity.
-    """
-    if order_quantity <= 0 or annual_demand < 0 or ordering_cost < 0 or holding_cost < 0:
-        raise ValueError("order_quantity must be positive; others must be non-negative")
-
-    ordering_total = (annual_demand / order_quantity) * ordering_cost
-    holding_total = (order_quantity / 2) * holding_cost
-    total_annual_cost = ordering_total + holding_total
-
-    return total_annual_cost
-
-
-def orders_per_year(annual_demand, order_quantity):
-    """
-    Calculate the number of orders placed per year.
-
-    Tells us how often we reorder. Usually paired with EOQ as the order quantity.
-
-    Args:
-        annual_demand (float): Annual demand in units
-        order_quantity (float): Units per order (often the EOQ result)
-
-    Returns:
-        float: Number of orders placed per year
-
-    Formula:
-        Orders per year = D / Q
-        where D = annual demand, Q = order quantity
-
-    Assumptions:
-        - Demand is spread evenly across the year.
-        - Every order is the same size (the order quantity).
-    """
-    if order_quantity <= 0 or annual_demand < 0:
-        raise ValueError("order_quantity must be positive; annual_demand must be non-negative")
-
-    return annual_demand / order_quantity

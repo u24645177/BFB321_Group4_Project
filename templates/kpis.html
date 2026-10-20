@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import kpi_card, status_badge, page_header %}
+
+{% block title %}KPI Dashboard - MedSync{% endblock %}
+
+{% block content %}
+{{ page_header('📊 KPI Dashboard', 'Supply chain performance at a glance') }}
+
+<!-- KPI cards -->
+<section class="row g-3 mb-section" aria-label="Key performance indicators">
+    {% for k in kpis %}
+    <div class="col-6 col-lg-3">
+        {{ kpi_card(k.label, k.value, k.target, k.tone) }}
+    </div>
+    {% endfor %}
+</section>
+
+<div class="row g-4">
+    <!-- Items needing attention -->
+    <section class="col-lg-6" aria-labelledby="attentionHeading">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 id="attentionHeading" class="h5">Stock needing attention</h2>
+                <ul class="list-group list-group-flush">
+                    {% for med in medicines if med.status != 'Sufficient' %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ med.name }} <small class="text-muted">({{ med.stock }} / ROP {{ med.reorder_point }})</small></span>
+                        {{ status_badge(med.status) }}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">All stock levels are sufficient.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Delivery exceptions -->
+    <section class="col-lg-6" aria-labelledby="exceptionsHeading">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 id="exceptionsHeading" class="h5">Open delivery exceptions</h2>
+                <ul class="list-group list-group-flush">
+                    {% for d in deliveries if d.exception %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>{{ d.id }}</strong> {{ status_badge(d.status) }}
+                        </div>
+                        <small class="text-muted">{{ d.route }} · {{ d.exception }}</small>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">No open exceptions.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
