@@ -7,8 +7,41 @@
     <!-- Page Heading -->
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1>💊 Medicine Inventory Dashboard</h1>
+            <h1><span aria-hidden="true">💊</span> Medicine Inventory Dashboard</h1>
             <p class="text-muted">Manage your medicine stock levels and reorder points</p>
+        </div>
+    </div>
+
+    <!-- Summary Stat Cards (reusable components) -->
+    <div class="row mb-5">
+        <!-- Card 1: Total Medicines -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Medicines</h6>
+                    <p class="card-text display-6">3</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Low Stock -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Low Stock</h6>
+                    <p class="card-text display-6 text-warning">1</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Critical Items -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Critical Items</h6>
+                    <p class="card-text display-6 text-danger">1</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -20,11 +53,11 @@
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
                         <tr>
-                            <th>Medicine Name</th>
-                            <th>Current Stock (units)</th>
-                            <th>Reorder Point</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                            <th scope="col">Medicine Name</th>
+                            <th scope="col">Current Stock (units)</th>
+                            <th scope="col">Reorder Point</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,25 +95,51 @@
     <div class="row">
         <div class="col-md-6">
             <h3>Add New Medicine</h3>
-            <form method="POST" action="/">
+
+            <!--
+                novalidate  = turn off the browser's default pop-ups so Bootstrap shows our messages
+                needs-validation = Bootstrap hook that the script at the bottom listens for
+            -->
+            <form method="POST" action="/add-medicine" class="needs-validation" novalidate>
+
+                <!-- Medicine Name -->
                 <div class="mb-3">
                     <label for="medicineName" class="form-label">Medicine Name</label>
-                    <input type="text" class="form-control" id="medicineName" name="medicine_name" required placeholder="e.g., Paracetamol">
+                    <input type="text" class="form-control" id="medicineName" name="medicine_name"
+                           required minlength="2" placeholder="e.g., Paracetamol">
+                    <div class="invalid-feedback">
+                        Please enter a medicine name (at least 2 characters).
+                    </div>
                 </div>
 
+                <!-- Current Stock -->
                 <div class="mb-3">
                     <label for="currentStock" class="form-label">Current Stock (units)</label>
-                    <input type="number" class="form-control" id="currentStock" name="current_stock" required placeholder="e.g., 100">
+                    <input type="number" class="form-control" id="currentStock" name="current_stock"
+                           required min="0" step="1" placeholder="e.g., 100">
+                    <div class="invalid-feedback">
+                        Stock must be a whole number of 0 or more.
+                    </div>
                 </div>
 
+                <!-- Reorder Point -->
                 <div class="mb-3">
                     <label for="reorderPoint" class="form-label">Reorder Point (units)</label>
-                    <input type="number" class="form-control" id="reorderPoint" name="reorder_point" required placeholder="e.g., 50">
+                    <input type="number" class="form-control" id="reorderPoint" name="reorder_point"
+                           required min="0" step="1" placeholder="e.g., 50">
+                    <div class="invalid-feedback">
+                        Reorder point must be a whole number of 0 or more.
+                    </div>
                 </div>
 
+                <!-- Unit Cost -->
                 <div class="mb-3">
                     <label for="unitCost" class="form-label">Unit Cost (R)</label>
-                    <input type="number" class="form-control" id="unitCost" name="unit_cost" step="0.01" required placeholder="e.g., 12.50">
+                    <input type="number" class="form-control" id="unitCost" name="unit_cost"
+                           step="0.01" min="0.01" required placeholder="e.g., 12.50">
+                    <div class="invalid-feedback">
+                        Please enter a cost greater than R0.00.
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-success w-100">Add Medicine</button>
@@ -88,4 +147,21 @@
         </div>
     </div>
 </div>
+
+<!-- Bootstrap client-side validation script -->
+<script>
+    (() => {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
 {% endblock %}

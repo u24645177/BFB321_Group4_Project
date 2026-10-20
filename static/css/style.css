@@ -1,64 +1,166 @@
-/* General Styles */
+/* MedSync Color Scheme */
 :root {
-    --primary-color: #2c3e50;
+    --primary-light-green: #90EE90;      /* Light green */
+    --primary-dark-green: #2d5016;       /* Dark green for text */
+    --primary-color: #2c3e50;            /* Alternative dark for depth */
     --success-color: #27ae60;
     --warning-color: #f39c12;
     --danger-color: #e74c3c;
-    --light-bg: #ecf0f1;
+    --white: #ffffff;
+    --light-bg: #f8f9fa;
+    --text-dark: #333333;
+    --text-light: #666666;
+    --border-light: #e0e0e0;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
+    background-color: var(--light-bg);
+    color: var(--text-dark);
+    line-height: 1.6;
 }
 
-/* Navbar */
+/* Navbar Styling */
 .navbar {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: var(--light-bg) !important;
+    border-bottom: 2px solid var(--primary-light-green);
 }
 
 .navbar-brand {
     font-size: 1.5rem;
     font-weight: bold;
+    color: var(--primary-dark-green) !important;
+}
+
+.nav-link {
+    color: var(--primary-dark-green) !important;
+    font-weight: 500;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--primary-light-green) !important;
+}
+
+.dropdown-menu {
+    border: 1px solid var(--border-light);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item:hover {
+    background-color: var(--light-bg);
+    color: var(--primary-dark-green);
 }
 
 /* Headings */
-h1, h2, h3 {
-    color: var(--primary-color);
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-dark-green);
     margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.5rem;
 }
 
 /* Tables */
 .table {
-    background-color: white;
+    background-color: var(--white);
     border-radius: 8px;
     overflow: hidden;
+    border-collapse: collapse;
 }
 
 .table thead {
-    background-color: var(--primary-color);
+    background-color: var(--primary-dark-green);
+    color: var(--white);
+}
+
+.table thead th {
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .table-hover tbody tr:hover {
     background-color: var(--light-bg);
+    transition: background-color 0.3s ease;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+    background-color: var(--light-bg);
+}
+
+.table-dark {
+    background-color: var(--primary-dark-green) !important;
+}
+
+.table-dark th {
+    color: var(--white);
+    border: none;
 }
 
 /* Badges */
 .badge {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 20px;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
 }
 
 /* Forms */
 .form-control, .form-select {
     border-radius: 6px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-dark-green);
+    box-shadow: 0 0 0 0.2rem rgba(45, 80, 22, 0.25);
+    outline: none;
+}
+
+.form-label {
+    color: var(--primary-dark-green);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
 }
 
 /* Buttons */
@@ -66,38 +168,150 @@ h1, h2, h3 {
     border-radius: 6px;
     font-weight: 500;
     transition: all 0.3s ease;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background-color: var(--primary-dark-green);
+    border-color: var(--primary-dark-green);
+    color: var(--white);
 }
 
 .btn-primary:hover {
-    background-color: #34495e;
+    background-color: #1f3a0f;
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(45, 80, 22, 0.3);
 }
 
 .btn-success {
     background-color: var(--success-color);
     border-color: var(--success-color);
+    color: var(--white);
 }
 
 .btn-success:hover {
     background-color: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
 }
 
-/* Responsive */
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Footer */
+footer {
+    background-color: var(--light-bg);
+    border-top: 2px solid var(--primary-light-green);
+    margin-top: 50px;
+    padding: 30px 0;
+}
+
+footer h6 {
+    color: var(--primary-dark-green);
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+footer p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+footer a {
+    color: var(--primary-dark-green);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--primary-light-green);
+}
+
+/* Container and Spacing */
+.container {
+    padding: 0 1rem;
+}
+
+.mt-5 {
+    margin-top: 3rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.mb-5 {
+    margin-bottom: 3rem !important;
+}
+
+.text-muted {
+    color: var(--text-light) !important;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .container {
-        padding: 0 1rem;
+    .navbar-brand {
+        font-size: 1.2rem;
     }
-    
+
+    .nav-link {
+        margin: 5px 0;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    .table tbody td {
+        padding: 0.5rem 0.75rem;
+    }
+
+    footer .row {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    footer .col-md-4 {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+
     h1 {
         font-size: 1.5rem;
     }
-    
-    .table-responsive {
-        font-size: 0.85rem;
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 }
