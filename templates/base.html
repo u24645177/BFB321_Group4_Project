@@ -98,8 +98,7 @@
                 <div class="category">
                     <label for="category-select">Medicine category</label>
                     <!-- Submitted with the search form so search + category filter together -->
-                    <select id="category-select" name="category" form="search-form"
-                            onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+                    <select id="category-select" name="category" form="search-form"  
                         {% block category_options %}
                         {% set current_category = request.args.get('category', 'all') %}
                         {% for value, label in [('all', 'All categories'), ('antibiotics', 'Antibiotics'), ('analgesics', 'Analgesics'), ('antiretrovirals', 'Antiretrovirals'), ('vaccines', 'Vaccines')] %}
@@ -130,7 +129,8 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <!-- Our shared JavaScript: sortable tables, form validation, category filter -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -695,3 +695,21 @@ footer a:hover {
         @media (prefers-reduced-motion: reduce) {
             * { transition: none !important; }
         }
+/* ---------- Sortable table headings (tracking page) ---------- */
+.sort-btn {
+    background: none;          /* remove the grey box */
+    border: none;              /* remove the outline */
+    padding: 0;                /* the <th> already has padding */
+    color: inherit;            /* use the heading's white text */
+    font: inherit;             /* use the heading's font and weight */
+    cursor: pointer;           /* show a hand so users know it's clickable */
+}
+
+.sort-btn:hover {
+    color: var(--primary-light-green);   /* your MedSync green on hover */
+}
+
+.sort-icon {
+    margin-left: 4px;
+    opacity: 0.7;
+}
