@@ -19,8 +19,7 @@ from models.eoq import (
     calculate_total_annual_cost
 )
 
-def test_calculate_eoq_basic(self):
-    assert calculate_eoq(1000, 50, 5) == pytest.approx(141.42, rel=0.01)
+
     
 class TestEOQ:
     """Test suite for EOQ calculations."""
@@ -32,7 +31,7 @@ class TestEOQ:
         Example: Annual demand = 1000, Ordering cost = 50, Holding cost = 5
         Expected EOQ ≈ 141.42 units
         """
-        pass
+        assert calculate_eoq(1000, 50, 5) == pytest.approx(141.42, rel=0.01)
     
     def test_calculate_eoq_edge_case_low_demand(self):
         """Test EOQ with very low annual demand."""
