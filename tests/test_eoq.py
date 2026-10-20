@@ -19,7 +19,9 @@ from models.eoq import (
     calculate_total_annual_cost
 )
 
-
+def test_calculate_eoq_basic(self):
+    assert calculate_eoq(1000, 50, 5) == pytest.approx(141.42, rel=0.01)
+    
 class TestEOQ:
     """Test suite for EOQ calculations."""
     
