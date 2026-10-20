@@ -1,0 +1,39 @@
+{# Reusable UI components. Import with:
+   {% from "components/macros.html" import status_badge, kpi_card, sortable_th, page_header %} #}
+
+{# Coloured badge for stock and delivery statuses #}
+{% macro status_badge(status) -%}
+    {%- set colours = {
+        'Sufficient': 'success', 'Delivered': 'success',
+        'Low Stock': 'warning text-dark', 'Delayed': 'warning text-dark',
+        'Critical': 'danger', 'Failed': 'danger',
+        'In Transit': 'primary', 'Scheduled': 'secondary'
+    } -%}
+    <span class="badge bg-{{ colours.get(status, 'secondary') }}">{{ status }}</span>
+{%- endmacro %}
+
+{# Page title + subtitle #}
+{% macro page_header(title, subtitle) %}
+<header class="page-header">
+    <h1>{{ title }}</h1>
+    <p class="text-muted mb-0">{{ subtitle }}</p>
+</header>
+{% endmacro %}
+
+{# Summary card for a single KPI #}
+{% macro kpi_card(label, value, target, tone='primary') %}
+<div class="card kpi-card border-{{ tone }} h-100">
+    <div class="card-body">
+        <p class="kpi-label">{{ label }}</p>
+        <p class="kpi-value text-{{ tone }}">{{ value }}</p>
+        <p class="kpi-target text-muted mb-0">{{ target }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+{# Table header cell that sorts its column when clicked (see static/js/main.js) #}
+{% macro sortable_th(label, type='text') %}
+<th scope="col" class="sortable" data-sort-type="{{ type }}" aria-sort="none">
+    <button type="button" class="sort-btn">{{ label }} <span class="sort-icon" aria-hidden="true">↕</span></button>
+</th>
+{% endmacro %}
