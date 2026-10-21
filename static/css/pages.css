@@ -423,6 +423,12 @@
     width: 100% !important;
 }
 
+/* Section spacing - adds margin-bottom to section elements */
+.mb-section {
+    margin-bottom: var(--spacing-2xl) !important;
+}
+
+
 /* Form Fieldsets */
 fieldset {
     border: none;
