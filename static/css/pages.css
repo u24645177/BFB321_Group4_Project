@@ -1,9 +1,27 @@
-/* ========================================================================
-   MedSync Custom Styling for All Pages (Tracking, Reorder, KPIs)
-   Brings consistency with dashboard.css design system
-   ======================================================================== */
+/*  Pages Stylesheet (pages.css)
 
-/* ---------- Page tokens (color scheme) ---------- */
+ This file contains styles for all inner pages of the app: Tracking, Reorder, and KPIs pages.
+  we use this file to keep these pages looking consistent with the main dashboard.
+
+ - Page headers with titles and descriptions
+ - Card and panel containers for organizing content
+ - Form styling (inputs, selects, labels, validation feedback)
+ - Button styles (success buttons, danger outlines, small buttons)
+ - Data tables with striped rows and hover effects
+ - Status badges with color-coded statuses
+ - Modal popup windows
+ - Alert and flash message styling
+ - Responsive design for tablets and mobile (768px breakpoint)
+ - Utility classes for quick spacing and sizing
+ - Accessibility features like visually-hidden text
+ - Form validation states (green for valid, red for invalid)
+ 
+ This file uses CSS variables from :root for all colors, spacing, and effects.
+
+ Supports both light and dark modes via @media (prefers-color-scheme: dark)
+ */ 
+
+/*color scheme */
 :root {
     --green: #7BC742;
     --green-dark: #5a9a32;
@@ -69,9 +87,7 @@
     }
 }
 
-/* ========================================================================
-   Page Header (page_header macro styling)
-   ======================================================================== */
+/* Page Header */
 .page-header {
     margin-bottom: var(--spacing-2xl);
     padding-bottom: var(--spacing-lg);
@@ -92,9 +108,7 @@
     color: var(--text-secondary);
 }
 
-/* ========================================================================
-   Card & Panel Styling
-   ======================================================================== */
+/* Card and Panel Styling */
 .card {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -117,9 +131,7 @@
     padding: var(--spacing-lg);
 }
 
-/* ========================================================================
-   Form Styling
-   ======================================================================== */
+/* Form label Styling */
 .form-label {
     font-size: 14px;
     font-weight: 600;
@@ -160,9 +172,7 @@
     margin-top: var(--spacing-xs);
 }
 
-/* ========================================================================
-   Button Styling
-   ======================================================================== */
+/* Button styling */
 .btn {
     font-size: 14px;
     font-weight: 600;
@@ -200,9 +210,7 @@
     font-size: 12px;
 }
 
-/* ========================================================================
-   Table Styling
-   ======================================================================== */
+/* Table Styling */
 .table {
     background-color: var(--bg-primary);
     color: var(--text-primary);
@@ -254,9 +262,7 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* ========================================================================
-   Status Badge Styling
-   ======================================================================== */
+/* Status Badge Styling */
 .status-badge {
     display: inline-block;
     padding: 4px 8px;
@@ -294,9 +300,7 @@
     color: var(--blue-text);
 }
 
-/* ========================================================================
-   Modal Styling
-   ======================================================================== */
+/* Modal Styling */
 .modal-content {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -336,9 +340,7 @@
     opacity: 1;
 }
 
-/* ========================================================================
-   Flash Messages / Alerts
-   ======================================================================== */
+/* Alert Styling */
 .alert {
     border-radius: var(--radius-lg);
     border: 1px solid;
@@ -371,9 +373,7 @@
     color: var(--blue-text);
 }
 
-/* ========================================================================
-   Responsive Design
-   ======================================================================== */
+/* Responsive Design */
 @media (max-width: 768px) {
     .page-header {
         margin-bottom: var(--spacing-lg);
@@ -401,9 +401,7 @@
     }
 }
 
-/* ========================================================================
-   Utility Classes
-   ======================================================================== */
+/* utility class */
 .mb-3 {
     margin-bottom: var(--spacing-lg) !important;
 }
@@ -425,9 +423,7 @@
     width: 100% !important;
 }
 
-/* ========================================================================
-   Form Groups & Fieldsets
-   ======================================================================== */
+/* Form Fieldsets */
 fieldset {
     border: none;
     padding: 0;
@@ -456,9 +452,7 @@ legend {
     user-select: none;
 }
 
-/* ========================================================================
-   Typography
-   ======================================================================== */
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
@@ -482,9 +476,7 @@ a:hover {
     text-decoration: underline;
 }
 
-/* ========================================================================
-   Visually Hidden (accessibility)
-   ======================================================================== */
+/* Visually Hidden (accessibility) */
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -497,9 +489,7 @@ a:hover {
     border-width: 0;
 }
 
-/* ========================================================================
-   Needs Validation (Bootstrap form validation)
-   ======================================================================== */
+/* Needs Validation (bootstrap) */
 .needs-validation {
     display: block;
 }

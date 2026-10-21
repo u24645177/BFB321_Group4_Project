@@ -1,3 +1,11 @@
+/* This is the The main stylesheet for the entire MedSync application.
+        Defines the overall color scheme, which we set to green adn white to match the MedSync branding.
+        Styles all of the basic HTML elements like the navbar, headings, tables, forms, buttons, footer.
+        This file also creates the app layout structure this has the features of the sidebar navigation, main content area, topbar.
+        this file also handles responsive design for mobile and tablet screens
+        it also codes for the typography and spacing standards used throughout the app
+*/
+
 /* MedSync Color Scheme */
 :root {
     --primary-light-green: #90EE90;      /* Light green */
@@ -315,10 +323,10 @@ footer a:hover {
         font-size: 16px; /* Prevents zoom on iOS */
     }
 }
-/* ===== App layout: sidebar, topbar (moved from base.html) ===== */
+/* APP LAYOUT: sidebar, topbar */
 
 
-        /* ---------- Design tokens ---------- */
+/*  CSS Variables for colors and spacing  */
         :root {
             --primary: #7BC742;
             --primary-dark: #5a9a32;
@@ -353,7 +361,7 @@ footer a:hover {
             }
         }
 
-        /* ---------- Base ---------- */
+/*  Base  */
         *, *::before, *::after { box-sizing: border-box; }
 
         body {
@@ -406,13 +414,13 @@ footer a:hover {
             stroke-linejoin: round;
         }
 
-        /* ---------- Layout ---------- */
+/*  Layout  */
         .app-shell {
             display: flex;
             min-height: 100vh;
         }
 
-        /* ---------- Sidebar ---------- */
+/*  Sidebar  */
         .sidebar {
             position: sticky;
             top: 0;
@@ -438,11 +446,17 @@ footer a:hover {
             border-radius: var(--radius-sm);
         }
 
-        /* Full logo (mark + name + tagline) is the default; the wordmark is used on
-           mobile, and the mark + live text lockup in dark mode where the logo's
-           dark lettering would disappear against the sidebar. */
-        /* The logo PNGs have solid white backgrounds: multiply blends that white
-           into the sidebar in light mode; in dark mode the mark shows as a rounded tile. */
+/* The full logo shows on desktop, but on mobile we use just the wordmark.
+
+   In dark mode, we use the icon + text version because the dark lettering
+   wouldn't show up against the dark sidebar.
+
+   The logo PNGs have white backgrounds, so we use multiply blending to
+   make them blend nicely with the sidebar in light mode.
+   
+   To be fully transparent, this is not included in the course material, 
+   so used online sources to find a way to overcome the white background issue */
+
         .brand-logo-full,
         .brand-logo-wordmark { mix-blend-mode: multiply; }
 
@@ -544,7 +558,7 @@ footer a:hover {
             cursor: not-allowed;
         }
 
-        /* ---------- Main area ---------- */
+/*  Main area  */
         .main {
             flex: 1;
             min-width: 0;
@@ -646,7 +660,7 @@ footer a:hover {
             padding: 32px;
         }
 
-        /* ---------- Responsive ---------- */
+    /*  Responsive  */
         @media (max-width: 992px) {
             .topbar { flex-wrap: wrap; padding: 16px 24px; }
             .search { flex-basis: 100%; max-width: none; order: 3; }
@@ -685,7 +699,7 @@ footer a:hover {
             .content { padding: 16px; }
         }
 
-        /* Placed after the responsive rules so it wins at every width */
+/* Placed after the responsive rules so it wins at every width */
         @media (prefers-color-scheme: dark) {
             .brand-logo-full,
             .brand-logo-wordmark { display: none; }
@@ -695,7 +709,7 @@ footer a:hover {
         @media (prefers-reduced-motion: reduce) {
             * { transition: none !important; }
         }
-/* ---------- Sortable table headings (tracking page) ---------- */
+/*  Sortable table headings (tracking page)  */
 .sort-btn {
     background: none;          /* remove the grey box */
     border: none;              /* remove the outline */
@@ -706,7 +720,7 @@ footer a:hover {
 }
 
 .sort-btn:hover {
-    color: var(--primary-light-green);   /* your MedSync green on hover */
+    color: var(--primary-light-green);   /* the MedSync green on hover */
 }
 
 .sort-icon {

@@ -1,4 +1,26 @@
-/* Dashboard tokens (layout tokens come from base.html) */
+/**
+ Dashboard Stylesheet (dashboard.css)
+ 
+ This file contains styles for the main dashboard page and its components.
+ - Color tokens for status indicators (green, amber, blue, purple, red)
+ - KPI cards that display key metrics and progress bars
+ - Data tables with hover effects and striped rows
+ - Status badges for order statuses (approved, delayed, delivered, etc.)
+ - Alert cards for supply chain notifications
+ - Order form with validation feedback
+ - Responsive layouts for mobile and tablet
+ 
+ Links to:
+ - style.css (base layout and typography)
+ - Uses CSS variables defined in :root
+ - dashboard.html (the template that uses these styles)
+ 
+ The dark mode of a browser is supported using @media (prefers-color-scheme: dark) */
+
+
+
+
+ /* Dashboard color scheme and styling variables */
     :root {
         --green: #7BC742;
         --green-dark: #5a9a32;
@@ -120,7 +142,7 @@
         padding: 0;
     }
 
-/* Flash messages */
+/* Flash messages - temporary notification boxes that appear at the top of a page to tell the user something happened */
     .flash {
         display: flex;
         align-items: center;
@@ -133,7 +155,7 @@
         font-weight: 600;
     }
 
-/* KPI cards*/
+/* KPI cards - they’re boxes on the dashboard that show important metrics or numbers */
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -236,7 +258,7 @@
         color: var(--text-secondary);
     }
 
-/* Tables  */
+/* Tables */
     .table-scroll {
         overflow-x: auto;
         margin: 0 -24px -24px;
@@ -292,7 +314,7 @@
         color: var(--text-secondary);
     }
 
-/*  Status badges */
+/* Status badges */
     .status-badge {
         --badge-color: var(--text-secondary);
         --badge-text: var(--text-secondary);
