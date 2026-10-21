@@ -22,10 +22,11 @@
 
 
     <!-- Your custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
 
+{% block extra_css %}{% endblock %}
 
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -47,37 +48,42 @@
                 <span class="brand-label">Dashboard</span>
             </a>
 
-            <!-- TODO: Point this at the order page once that route exists -->
-            <button type="button" class="btn-order" id="orderMoreBtn">ORDER MORE</button>
+            <a href="{{ url_for('reorder') }}" class="btn-order">ORDER MORE</a>
 
-            <nav class="sidebar-nav" aria-label="Main navigation">
-                <ul>
-                    {% block sidebar_nav %}
-                    <!-- TODO: Swap href="#" for url_for('settings') / url_for('analytics') once those routes exist -->
-                    <li>
-                        <a class="nav-item-link" href="#" aria-disabled="true" title="Coming in a later step"
-                           {% if request.endpoint == 'settings' %}aria-current="page"{% endif %}>
-                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                            </svg>
-                            <span>Settings</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-item-link" href="#" aria-disabled="true" title="Coming in a later step"
-                           {% if request.endpoint == 'analytics' %}aria-current="page"{% endif %}>
-                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <line x1="18" y1="20" x2="18" y2="10"/>
-                                <line x1="12" y1="20" x2="12" y2="4"/>
-                                <line x1="6" y1="20" x2="6" y2="14"/>
-                            </svg>
-                            <span>Analytics</span>
-                        </a>
-                    </li>
-                    {% endblock %}
-                </ul>
-            </nav>
+       <nav class="sidebar-nav" aria-label="Main navigation">
+    <ul>
+        {% block sidebar_nav %}
+        <li>
+            <a class="nav-item-link" href="{{ url_for('tracking') }}"
+               {% if request.endpoint == 'tracking' %}aria-current="page"{% endif %}>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>
+                </svg>
+                <span>Tracking</span>
+            </a>
+        </li>
+        <li>
+            <a class="nav-item-link" href="{{ url_for('reorder') }}"
+               {% if request.endpoint == 'reorder' %}aria-current="page"{% endif %}>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                <span>Reorder</span>
+            </a>
+        </li>
+        <li>
+            <a class="nav-item-link" href="{{ url_for('kpis') }}"
+               {% if request.endpoint == 'kpis' %}aria-current="page"{% endif %}>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>KPIs</span>
+            </a>
+        </li>
+        {% endblock %}
+    </ul>
+</nav>
+
             {% endblock %}
         </aside>
 

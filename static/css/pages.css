@@ -1,0 +1,515 @@
+/* ========================================================================
+   MedSync Custom Styling for All Pages (Tracking, Reorder, KPIs)
+   Brings consistency with dashboard.css design system
+   ======================================================================== */
+
+/* ---------- Page tokens (color scheme) ---------- */
+:root {
+    --green: #7BC742;
+    --green-dark: #5a9a32;
+    --amber: #f59e0b;
+    --blue: #378ADD;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --success: #10b981;
+
+    /* Text colors - darker shades for readability */
+    --green-text: #4a7f29;
+    --amber-text: #b45309;
+    --blue-text: #1f68b5;
+    --purple-text: #6d28d9;
+    --red-text: #b91c1c;
+    --success-text: #047857;
+
+    /* Base colors */
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --border-color: #e5e7eb;
+
+    /* Spacing and sizing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+    --radius: 8px;
+    --radius-sm: 4px;
+    --radius-lg: 12px;
+    --radius-pill: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --green-text: #9fdc6f;
+        --amber-text: #fbbf24;
+        --blue-text: #74b3f2;
+        --purple-text: #b4a0fb;
+        --red-text: #f87171;
+        --success-text: #34d399;
+
+        --text-primary: #f3f4f6;
+        --text-secondary: #d1d5db;
+        --bg-primary: #1f2937;
+        --bg-secondary: #111827;
+        --bg-tertiary: #374151;
+        --border-color: #4b5563;
+
+        --shadow-sm: none;
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* ========================================================================
+   Page Header (page_header macro styling)
+   ======================================================================== */
+.page-header {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-header h1 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.page-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* ========================================================================
+   Card & Panel Styling
+   ======================================================================== */
+.card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+}
+
+.card-header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+}
+
+/* ========================================================================
+   Form Styling
+   ======================================================================== */
+.form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.1);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+.form-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+.invalid-feedback {
+    color: var(--red-text);
+    font-size: 12px;
+    margin-top: var(--spacing-xs);
+}
+
+/* ========================================================================
+   Button Styling
+   ======================================================================== */
+.btn {
+    font-size: 14px;
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-success {
+    background-color: var(--green);
+    color: white;
+    border-color: var(--green);
+}
+
+.btn-success:hover {
+    background-color: var(--green-dark);
+    border-color: var(--green-dark);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-danger {
+    color: var(--red-text);
+    border-color: var(--red);
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--red);
+    color: white;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* ========================================================================
+   Table Styling
+   ======================================================================== */
+.table {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-collapse: collapse;
+}
+
+.table thead {
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table thead th {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--spacing-md);
+    border: none;
+}
+
+.table tbody td {
+    padding: var(--spacing-md);
+    border-color: var(--border-color);
+    font-size: 14px;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+@media (prefers-color-scheme: dark) {
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+}
+
+.table-responsive {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========================================================================
+   Status Badge Styling
+   ======================================================================== */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Success - green */
+.badge-success,
+.status-badge.bg-success {
+    background-color: rgba(123, 199, 66, 0.15);
+    color: var(--green-text);
+}
+
+/* Warning - amber */
+.badge-warning,
+.status-badge.bg-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--amber-text);
+}
+
+/* Danger - red */
+.badge-danger,
+.status-badge.bg-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--red-text);
+}
+
+/* Info - blue */
+.badge-info,
+.status-badge.bg-info {
+    background-color: rgba(55, 138, 221, 0.15);
+    color: var(--blue-text);
+}
+
+/* ========================================================================
+   Modal Styling
+   ======================================================================== */
+.modal-content {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+    color: var(--text-primary);
+}
+
+.modal-footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+}
+
+.btn-close {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.btn-close:hover {
+    opacity: 1;
+}
+
+/* ========================================================================
+   Flash Messages / Alerts
+   ======================================================================== */
+.alert {
+    border-radius: var(--radius-lg);
+    border: 1px solid;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    font-size: 14px;
+}
+
+.alert-success {
+    background-color: rgba(123, 199, 66, 0.1);
+    border-color: var(--green);
+    color: var(--green-text);
+}
+
+.alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: var(--amber);
+    color: var(--amber-text);
+}
+
+.alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--red);
+    color: var(--red-text);
+}
+
+.alert-info {
+    background-color: rgba(55, 138, 221, 0.1);
+    border-color: var(--blue);
+    color: var(--blue-text);
+}
+
+/* ========================================================================
+   Responsive Design
+   ======================================================================== */
+@media (max-width: 768px) {
+    .page-header {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .card-body {
+        padding: var(--spacing-md);
+    }
+
+    .table-responsive {
+        font-size: 12px;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .row {
+        gap: var(--spacing-md);
+    }
+}
+
+/* ========================================================================
+   Utility Classes
+   ======================================================================== */
+.mb-3 {
+    margin-bottom: var(--spacing-lg) !important;
+}
+
+.mt-3 {
+    margin-top: var(--spacing-lg) !important;
+}
+
+.px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.text-muted {
+    color: var(--text-secondary);
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+/* ========================================================================
+   Form Groups & Fieldsets
+   ======================================================================== */
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+legend {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-check {
+    padding-left: 0;
+}
+
+.form-check-input {
+    margin-top: 0.25rem;
+    margin-right: var(--spacing-md);
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ========================================================================
+   Typography
+   ======================================================================== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.2;
+}
+
+p {
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+}
+
+a {
+    color: var(--blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--blue-text);
+    text-decoration: underline;
+}
+
+/* ========================================================================
+   Visually Hidden (accessibility)
+   ======================================================================== */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ========================================================================
+   Needs Validation (Bootstrap form validation)
+   ======================================================================== */
+.needs-validation {
+    display: block;
+}
+
+.was-validated .form-control:invalid,
+.form-control.is-invalid {
+    border-color: var(--red);
+}
+
+.was-validated .form-control:valid,
+.form-control.is-valid {
+    border-color: var(--green);
+}
