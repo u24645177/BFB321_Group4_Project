@@ -1,4 +1,4 @@
-    /* ---------- Dashboard tokens (layout tokens come from base.html) ---------- */
+/* Dashboard tokens (layout tokens come from base.html) */
     :root {
         --green: #7BC742;
         --green-dark: #5a9a32;
@@ -8,7 +8,7 @@
         --red: #ef4444;
         --success: #10b981;
 
-        /* Darker shades of each status colour for text, so it stays readable on light tints */
+/* Darker shades of each status colour for text, so it stays readable on light tints */
         --green-text: #4a7f29;
         --amber-text: #b45309;
         --blue-text: #1f68b5;
@@ -40,7 +40,7 @@
         }
     }
 
-    /* ---------- Page layout ---------- */
+/* Page layout*/
     .dash {
         display: flex;
         flex-direction: column;
@@ -120,7 +120,7 @@
         padding: 0;
     }
 
-    /* ---------- Flash messages ---------- */
+/* Flash messages */
     .flash {
         display: flex;
         align-items: center;
@@ -133,7 +133,7 @@
         font-weight: 600;
     }
 
-    /* ---------- KPI cards ---------- */
+/* KPI cards*/
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -195,6 +195,13 @@
         background: var(--kpi-color);
     }
 
+    .bar-fill {
+    display: block;
+    height: 100%;
+    background-color: var(--success-color);
+    width: var(--bar-width, 0%);
+    }
+
     .kpi-meta {
         display: flex;
         flex-wrap: wrap;
@@ -229,7 +236,7 @@
         color: var(--text-secondary);
     }
 
-    /* ---------- Tables ---------- */
+/* Tables  */
     .table-scroll {
         overflow-x: auto;
         margin: 0 -24px -24px;
@@ -285,7 +292,7 @@
         color: var(--text-secondary);
     }
 
-    /* ---------- Status badges ---------- */
+/*  Status badges */
     .status-badge {
         --badge-color: var(--text-secondary);
         --badge-text: var(--text-secondary);
@@ -317,7 +324,7 @@
     .status-critical   { --badge-color: var(--red);     --badge-text: var(--red-text); }
     .status-low        { --badge-color: var(--amber);   --badge-text: var(--amber-text); }
 
-    /* ---------- Alerts ---------- */
+/*  Alerts  */
     .alert-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -379,7 +386,7 @@
         font-weight: 600;
     }
 
-    /* ---------- Order form ---------- */
+/*  Order form  */
     .order-form {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -497,7 +504,7 @@
     .btn-submit:active,
     .btn-clear:active { transform: translateY(1px); }
 
-    /* ---------- Responsive ---------- */
+/*  Responsive  */
     @media (max-width: 1200px) {
         .dash-split { grid-template-columns: minmax(0, 1fr); }
     }

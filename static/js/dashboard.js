@@ -17,3 +17,9 @@
         const firstInvalid = form.querySelector('[aria-invalid="true"]');
         if (firstInvalid) firstInvalid.focus();
     })();
+
+    // Set KPI bar widths from data attributes
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+    const percent = bar.dataset.percent || 0;
+    bar.style.setProperty('--bar-width', percent + '%');
+    });

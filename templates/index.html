@@ -27,7 +27,7 @@
     {% endfor %}
     {% endwith %}
 
-    <!-- ===== 1. KPIs ===== -->
+<!-- KPIs section -->
     <section aria-labelledby="kpi-heading">
         <div class="section-head">
             <h2 id="kpi-heading" class="section-title">Key performance indicators</h2>
@@ -38,8 +38,12 @@
             {% for kpi in metrics %}
             <li class="kpi-card kpi-{{ kpi.status }}">
                 <p class="kpi-name">{{ kpi.name }}</p>
-                <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
-                <div class="kpi-bar" aria-hidden="true"><span style="width: {{ kpi.progress_percent }}%"></span></div>
+                <p class="kpi-value">{{ kpi.display_value }}<span class="unit">{{ kpi.unit }}</span></p>
+
+                <div class="kpi-bar" aria-hidden="true">
+                    <span class="bar-fill" data-percent="{{ kpi.progress_percent }}"></span>
+                </div>
+
                 <div class="kpi-meta">
                     <span class="kpi-status">{{ kpi_status_labels[kpi.status] }}</span>
                     {% if kpi.trend_direction == 'flat' %}
@@ -58,7 +62,8 @@
         </ul>
     </section>
 
-    <!-- ===== 2. Request status tracking ===== -->
+
+<!--Request status tracking-->
     <section id="requests" class="panel" aria-labelledby="requests-heading">
         <div class="section-head">
             <h2 id="requests-heading" class="section-title">Reorder requests</h2>
@@ -103,7 +108,7 @@
         </div>
     </section>
 
-    <!-- ===== 3. Alerts ===== -->
+<!--Alerts-->
     <section aria-labelledby="alerts-heading">
         <div class="section-head">
             <h2 id="alerts-heading" class="section-title">
@@ -147,7 +152,9 @@
     </section>
 
     <div class="dash-split">
-        <!-- ===== 4. Inventory overview ===== -->
+
+
+<!--Inventory overview -->
         <section class="panel" aria-labelledby="inventory-heading">
             <div class="section-head">
                 <h2 id="inventory-heading" class="section-title">Inventory overview</h2>
@@ -181,7 +188,7 @@
             </div>
         </section>
 
-        <!-- ===== 5. Place new order ===== -->
+<!--Place new order -->
         <section id="new-order" class="panel" aria-labelledby="order-heading">
             <div class="section-head">
                 <h2 id="order-heading" class="section-title">Place new order</h2>
