@@ -38,7 +38,7 @@
             {% for kpi in metrics %}
             <li class="kpi-card kpi-{{ kpi.status }}">
                 <p class="kpi-name">{{ kpi.name }}</p>
-                <p class="kpi-value">{{ kpi.display_value }}<span class="unit">{{ kpi.unit }}</span></p>
+                <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
 
                 <div class="kpi-bar" aria-hidden="true">
                     <span class="bar-fill" data-percent="{{ kpi.progress_percent }}"></span>
