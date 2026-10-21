@@ -47,9 +47,4 @@ document.querySelectorAll('table.sortable-table').forEach(function (table) {
     });
 });
 
-const categorySelect = document.querySelector('#category-select');
-
-categorySelect.addEventListener('change', () => {
-    document.querySelector('#search-form').submit();
-});
 
