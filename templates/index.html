@@ -180,7 +180,14 @@
                             <td class="cell-strong">{{ item.name }}</td>
                             <td class="num">{{ '{:,}'.format(item.current_stock) }}</td>
                             <td class="num">{{ '{:,}'.format(item.reorder_point) }}</td>
-                            <td><span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span></td>
+                            <td>
+                                <div class="status-cell">
+                                     <span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span>
+                                     {% if item.status != 'Sufficient' %}
+                                    <a class="row-action" href="{{ url_for('reorder', medicine=item.name) }}">Reorder</a>
+                                    {% endif %}
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
