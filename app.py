@@ -110,7 +110,8 @@ def update_exception(delivery_id):
 @app.route('/kpis')
 def kpis():
     """Display the KPI dashboard"""
-    return render_template('kpis.html', kpis=KPIS, medicines=MEDICINES, deliveries=DELIVERIES)
+    context = dashboard.get_dashboard_context()
+    return render_template('kpis.html', kpis=context['metrics'], medicines=context['inventory'], deliveries=DELIVERIES)
 
 
 # Run the app

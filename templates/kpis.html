@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/macros.html" import kpi_card, status_badge, page_header %}
+{% set tones = {'good': 'success', 'warning': 'warning', 'critical': 'danger'} %}
 
 {% block title %}KPI Dashboard - MedSync{% endblock %}
 
@@ -10,7 +11,7 @@
 <section class="row g-3 mb-section" aria-label="Key performance indicators">
     {% for k in kpis %}
     <div class="col-6 col-lg-3">
-        {{ kpi_card(k.label, k.value, k.target, k.tone) }}
+        {{ kpi_card(k.name, k.display_value ~ ' ' ~ k.unit, k.target_text, tones[k.status]) }}
     </div>
     {% endfor %}
 </section>
@@ -25,7 +26,7 @@
                 <ul class="list-group list-group-flush">
                     {% for med in medicines if med.status != 'Sufficient' %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ med.name }} <small class="text-muted">({{ med.stock }} / ROP {{ med.reorder_point }})</small></span>
+                        <span>{{ med.name }} <small class="text-muted">({{ med.current_stock }} / ROP {{ med.reorder_point }})</small></span>
                         {{ status_badge(med.status) }}
                     </li>
                     {% else %}

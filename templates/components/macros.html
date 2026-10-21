@@ -5,7 +5,7 @@
 {% macro status_badge(status) -%}
     {%- set colours = {
         'Sufficient': 'success', 'Delivered': 'success',
-        'Low Stock': 'warning text-dark', 'Delayed': 'warning text-dark',
+        'Low': 'warning text-dark', 'Delayed': 'warning text-dark',
         'Critical': 'danger', 'Failed': 'danger',
         'In Transit': 'primary', 'Scheduled': 'secondary'
     } -%}
