@@ -94,6 +94,7 @@
         <div class="main">
             {% block topbar %}
             <header class="topbar">
+                {% if request.endpoint == 'index' %}
                 <div class="category">
                     <label for="category-select">Medicine category</label>
                     <!-- Auto-submits the page with selected category -->
@@ -106,6 +107,7 @@
                         <option value="vaccines" {% if current_category == 'vaccines' %}selected{% endif %}>Vaccines</option>
                     </select>
                 </div>
+                {% endif %}
 
                 <div class="profile">
                     <!-- TODO: Replace with the logged-in user's details once authentication exists (Step 4) -->
