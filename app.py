@@ -11,12 +11,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a real secre
 # ---------------------------------------------------------------------------
 # Sample data (placeholder until the MySQL database is connected in Step 3)
 # ---------------------------------------------------------------------------
-MEDICINES = [
-    {'name': 'Paracetamol 500mg', 'stock': 45, 'reorder_point': 50, 'status': 'Low Stock'},
-    {'name': 'Amoxicillin 250mg', 'stock': 120, 'reorder_point': 75, 'status': 'Sufficient'},
-    {'name': 'Ibuprofen 400mg', 'stock': 10, 'reorder_point': 80, 'status': 'Critical'},
-    {'name': 'Metformin 850mg', 'stock': 300, 'reorder_point': 140, 'status': 'Sufficient'},
-]
+
 
 FACILITIES = ['Steve Biko Academic Hospital', 'Kalafong Hospital', 'Tshwane District Hospital']
 
@@ -31,12 +26,7 @@ DELIVERIES = [
      'eta': '2026-10-22 08:00', 'status': 'Scheduled', 'exception': ''},
 ]
 
-KPIS = [
-    {'label': 'Stock Availability', 'value': '92%', 'target': 'Target ≥ 95%', 'tone': 'warning'},
-    {'label': 'On-Time Deliveries', 'value': '88%', 'target': 'Target ≥ 90%', 'tone': 'warning'},
-    {'label': 'Stockout Events (30 days)', 'value': '3', 'target': 'Target 0', 'tone': 'danger'},
-    {'label': 'Avg. Lead Time', 'value': '6.4 days', 'target': 'Target ≤ 7 days', 'tone': 'success'},
-]
+
 
 
 # Route: Home/Dashboard
