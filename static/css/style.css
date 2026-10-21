@@ -714,13 +714,15 @@ footer a:hover {
     background: none;          /* remove the grey box */
     border: none;              /* remove the outline */
     padding: 0;                /* the <th> already has padding */
-    color: inherit;            /* use the heading's white text */
+    color: inherit;            /* use the heading's dark text */
     font: inherit;             /* use the heading's font and weight */
+    text-transform: inherit;   /* use the heading's uppercase */
+    letter-spacing: inherit;   /* use the heading's letter spacing */
     cursor: pointer;           /* show a hand so users know it's clickable */
 }
 
 .sort-btn:hover {
-    color: var(--primary-light-green);   /* the MedSync green on hover */
+    color: var(--primary-dark);   /* the MedSync green on hover */
 }
 
 .sort-icon {
