@@ -52,3 +52,4 @@ const categorySelect = document.querySelector('#category-select');
 categorySelect.addEventListener('change', () => {
     document.querySelector('#search-form').submit();
 });
+

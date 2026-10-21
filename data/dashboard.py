@@ -44,14 +44,15 @@ SUPPLIERS = [
 
 # Demand statistics and supplier lead time drive each medicine's reorder point
 MEDICINES = [
-    {'name': 'Paracetamol 500mg', 'current_stock': 95, 'avg_daily_demand': 12, 'demand_std_dev': 4, 'lead_time_days': 7},
-    {'name': 'Amoxicillin 250mg', 'current_stock': 140, 'avg_daily_demand': 6, 'demand_std_dev': 2, 'lead_time_days': 10},
-    {'name': 'Ibuprofen 400mg', 'current_stock': 9, 'avg_daily_demand': 10, 'demand_std_dev': 3, 'lead_time_days': 7},
-    {'name': 'Metformin 500mg', 'current_stock': 260, 'avg_daily_demand': 8, 'demand_std_dev': 2, 'lead_time_days': 14},
-    {'name': 'Insulin Glargine 100U/ml', 'current_stock': 6, 'avg_daily_demand': 3, 'demand_std_dev': 1, 'lead_time_days': 21},
-    {'name': 'Salbutamol Inhaler', 'current_stock': 58, 'avg_daily_demand': 5, 'demand_std_dev': 2, 'lead_time_days': 10},
-    {'name': 'Tenofovir/Emtricitabine', 'current_stock': 210, 'avg_daily_demand': 7, 'demand_std_dev': 1.5, 'lead_time_days': 14},
+    {'name': 'Paracetamol 500mg', 'category': 'analgesics', 'current_stock': 95, 'avg_daily_demand': 12, 'demand_std_dev': 4, 'lead_time_days': 7},
+    {'name': 'Amoxicillin 250mg', 'category': 'antibiotics', 'current_stock': 140, 'avg_daily_demand': 6, 'demand_std_dev': 2, 'lead_time_days': 10},
+    {'name': 'Ibuprofen 400mg', 'category': 'analgesics', 'current_stock': 9, 'avg_daily_demand': 10, 'demand_std_dev': 3, 'lead_time_days': 7},
+    {'name': 'Metformin 500mg', 'category': 'antiretrovirals', 'current_stock': 260, 'avg_daily_demand': 8, 'demand_std_dev': 2, 'lead_time_days': 14},
+    {'name': 'Insulin Glargine 100U/ml', 'category': 'vaccines', 'current_stock': 6, 'avg_daily_demand': 3, 'demand_std_dev': 1, 'lead_time_days': 21},
+    {'name': 'Salbutamol Inhaler', 'category': 'antibiotics', 'current_stock': 58, 'avg_daily_demand': 5, 'demand_std_dev': 2, 'lead_time_days': 10},
+    {'name': 'Tenofovir/Emtricitabine', 'category': 'antiretrovirals', 'current_stock': 210, 'avg_daily_demand': 7, 'demand_std_dev': 1.5, 'lead_time_days': 14},
 ]
+
 
 # KPIs from the project proposal. Status thresholds:
 #   goal 'decrease': value <= target is good, value <= limit is a warning, above is critical
@@ -250,21 +251,6 @@ def build_alerts(kpis, request_rows, today):
     return alerts
 
 
-def get_dashboard_context():
-    """Everything index.html needs, as template variables."""
-    today = date.today()
-    kpis = build_kpis(REQUESTS)
-    request_rows = build_request_rows(REQUESTS, today)
-    return {
-        'today': today,
-        'metrics': kpis,
-        'requests': request_rows,
-        'alerts': build_alerts(kpis, request_rows, today),
-        'inventory': build_inventory(),
-        'medicine_options': [m['name'] for m in MEDICINES],
-        'supplier_options': SUPPLIERS,
-    }
-
 
 def validate_order(form, today=None):
     """
@@ -325,3 +311,48 @@ def add_request(order, today=None):
         'status_since': today,
         'emergency': False,
     })
+
+def filter_medicines_by_category(category):
+    """Filter medicines by category. 'all' returns all medicines."""
+    if category == 'all':
+        return MEDICINES
+    return [m for m in MEDICINES if m['category'] == category]
+
+
+def filter_requests_by_category(requests, category):
+    """Filter requests by medicine category."""
+    if category == 'all':
+        return requests
+    medicine_names = {m['name'] for m in filter_medicines_by_category(category)}
+    return [r for r in requests if r['medicine'] in medicine_names]
+
+
+def get_dashboard_context(category='all'):
+    """Everything index.html needs, as template variables.
+    
+    Args:
+        category: Filter by medicine category ('all', 'antibiotics', 'analgesics', 'antiretrovirals', 'vaccines')
+    """
+    today = date.today()
+    
+    # Filter requests by category
+    filtered_requests = filter_requests_by_category(REQUESTS, category)
+    
+    # Build KPIs from filtered requests
+    kpis = build_kpis(filtered_requests)
+    request_rows = build_request_rows(filtered_requests, today)
+    
+    # Filter medicines and inventory by category
+    filtered_medicines = filter_medicines_by_category(category)
+    
+    return {
+        'today': today,
+        'metrics': kpis,
+        'requests': request_rows,
+        'alerts': build_alerts(kpis, request_rows, today),
+        'inventory': [inv for inv in build_inventory() if any(m['name'] == inv['name'] for m in filtered_medicines)],
+        'medicine_options': [m['name'] for m in filtered_medicines],
+        'supplier_options': SUPPLIERS,
+        'current_category': category,
+    }
+    

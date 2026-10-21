@@ -42,8 +42,9 @@ KPIS = [
 # Route: Home/Dashboard
 @app.route('/')
 def index():
-    """Display the inventory dashboard"""
-    return render_template('index.html', **dashboard.get_dashboard_context())
+    """Display the inventory dashboard, filtered by selected medicine category"""
+    category = request.args.get('category', 'all')
+    return render_template('index.html', **dashboard.get_dashboard_context(category))
 
 
 # Route: Place a new reorder request from the dashboard form
