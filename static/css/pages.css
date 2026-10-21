@@ -521,3 +521,9 @@ a:hover {
 .form-control.is-valid {
     border-color: var(--green);
 }
+
+/* Table headings styling */
+.table-headings th {
+    color: white;
+    font-weight: 600;
+}
