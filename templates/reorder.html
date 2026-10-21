@@ -17,7 +17,7 @@
                             <option value="" disabled {% if not request.args.medicine %}selected{% endif %}>Choose a medicine…</option>
                             {% for med in medicines %}
                             <option value="{{ med.name }}" {% if request.args.medicine == med.name %}selected{% endif %}>
-                                {{ med.name }} ({{ med.stock }} in stock)
+                                {{ med.name }} ({{ med.current_stock }} in stock)
                             </option>
                             {% endfor %}
                         </select>
