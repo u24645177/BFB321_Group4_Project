@@ -12,12 +12,12 @@
 
         <thead class="table-headings">
             <tr>
-                <th scope="col">Delivery</th>
-                <th scope="col">Route</th>
-                <th scope="col">Vehicle</th>
-                <th scope="col">ETA</th>
-                <th scope="col">Status</th>
-                <th scope="col">Exception</th>
+                {{sortable_th('Delivery')}}
+                {{sortable_th('Route')}}
+                {{sortable_th('Vehicle')}}
+                {{sortable_th('ETA', 'date')}}
+                {{sortable_th('Status')}}
+                {{sortable_th('Exception')}}
                 <th scope="col">Action</th>
             </tr>
         </thead>
