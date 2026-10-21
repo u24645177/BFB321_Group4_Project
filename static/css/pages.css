@@ -432,7 +432,7 @@
 /* Form Fieldsets */
 fieldset {
     border: none;
-    padding: 0;
+    padding: 0 0 0 var(--spacing-lg);
     margin: 0;
 }
 
@@ -446,6 +446,13 @@ legend {
 .form-check {
     padding-left: 0;
 }
+
+
+.form-check-inline {
+    margin-right: 48px;
+    margin-bottom: var(--spacing-md);
+}
+
 
 .form-check-input {
     margin-top: 0.25rem;
@@ -498,6 +505,11 @@ a:hover {
 /* Needs Validation (bootstrap) */
 .needs-validation {
     display: block;
+}
+
+.needs-validation {
+    display: block;
+    padding-left: var(--spacing-lg);
 }
 
 .was-validated .form-control:invalid,
