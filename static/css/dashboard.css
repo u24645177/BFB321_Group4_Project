@@ -544,3 +544,27 @@
         .kpi-card:hover { transform: none; }
     }
 
+/* Status badge and Reorder link sit side by side, and wrap on narrow screens */
+.status-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Small "Reorder" link on low-stock inventory rows */
+.row-action {
+    padding: 4px 12px;
+    border: 1px solid var(--green);
+    border-radius: var(--radius-pill);
+    color: var(--green-text);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.row-action:hover {
+    background: var(--green);
+    color: #fff;
+}

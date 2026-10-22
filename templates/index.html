@@ -38,7 +38,7 @@
             {% for kpi in metrics %}
             <li class="kpi-card kpi-{{ kpi.status }}">
                 <p class="kpi-name">{{ kpi.name }}</p>
-                <p class="kpi-value">{{ kpi.display_value }}<span class="unit">{{ kpi.unit }}</span></p>
+                <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
 
                 <div class="kpi-bar" aria-hidden="true">
                     <span class="bar-fill" data-percent="{{ kpi.progress_percent }}"></span>
@@ -180,7 +180,14 @@
                             <td class="cell-strong">{{ item.name }}</td>
                             <td class="num">{{ '{:,}'.format(item.current_stock) }}</td>
                             <td class="num">{{ '{:,}'.format(item.reorder_point) }}</td>
-                            <td><span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span></td>
+                            <td>
+                                <div class="status-cell">
+                                     <span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span>
+                                     {% if item.status != 'Sufficient' %}
+                                    <a class="row-action" href="{{ url_for('reorder', medicine=item.name) }}">Reorder</a>
+                                    {% endif %}
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

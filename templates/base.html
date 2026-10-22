@@ -17,7 +17,7 @@
         })();
     </script>
 
-<!-- Bootstrap CSS (still used by page templates such as index.html) -->
+<!-- Bootstrap CSS (still used by all page templates such as index.html, tracking.html, reorder.html) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 
@@ -49,11 +49,12 @@
                 <span class="brand-label">Dashboard</span>
             </a>
 
-            <a href="{{ url_for('reorder') }}" class="btn-order">ORDER MORE</a>
+            <a href="{{ url_for('index') }}#new-order" class="btn-order">ORDER MORE</a>
 
        <nav class="sidebar-nav" aria-label="Main navigation">
     <ul>
         {% block sidebar_nav %}
+            
         <li>
             <a class="nav-item-link" href="{{ url_for('tracking') }}"
                {% if request.endpoint == 'tracking' %}aria-current="page"{% endif %}>
@@ -63,7 +64,15 @@
                 <span>Tracking</span>
             </a>
         </li>
-        
+        <li>    
+            <a class="nav-item-link" href="{{ url_for('reorder') }}"
+               {% if request.endpoint == 'reorder' %}aria-current="page"{% endif %}>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3h18v4H3z"/><path d="M3 9h18v4H3z"/><path d="M3 15h18v4H3z"/>
+                </svg>
+                <span>Reorder Request</span>
+            </a>
+        </li>
         <li>
             <a class="nav-item-link" href="{{ url_for('kpis') }}"
                {% if request.endpoint == 'kpis' %}aria-current="page"{% endif %}>
@@ -97,6 +106,8 @@
                         <option value="analgesics" {% if current_category == 'analgesics' %}selected{% endif %}>Analgesics</option>
                         <option value="antiretrovirals" {% if current_category == 'antiretrovirals' %}selected{% endif %}>Antiretrovirals</option>
                         <option value="vaccines" {% if current_category == 'vaccines' %}selected{% endif %}>Vaccines</option>
+                        <option value="antidiabetics" {% if current_category == 'antidiabetics' %}selected{% endif %}>Antidiabetics</option>
+                        <option value="respiratory" {% if current_category == 'respiratory' %}selected{% endif %}>Respiratory</option>
                     </select>
                 </div>
                 {% endif %}

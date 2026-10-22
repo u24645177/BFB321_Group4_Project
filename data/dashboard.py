@@ -47,9 +47,9 @@ MEDICINES = [
     {'name': 'Paracetamol 500mg', 'category': 'analgesics', 'current_stock': 95, 'avg_daily_demand': 12, 'demand_std_dev': 4, 'lead_time_days': 7},
     {'name': 'Amoxicillin 250mg', 'category': 'antibiotics', 'current_stock': 140, 'avg_daily_demand': 6, 'demand_std_dev': 2, 'lead_time_days': 10},
     {'name': 'Ibuprofen 400mg', 'category': 'analgesics', 'current_stock': 9, 'avg_daily_demand': 10, 'demand_std_dev': 3, 'lead_time_days': 7},
-    {'name': 'Metformin 500mg', 'category': 'antiretrovirals', 'current_stock': 260, 'avg_daily_demand': 8, 'demand_std_dev': 2, 'lead_time_days': 14},
-    {'name': 'Insulin Glargine 100U/ml', 'category': 'vaccines', 'current_stock': 6, 'avg_daily_demand': 3, 'demand_std_dev': 1, 'lead_time_days': 21},
-    {'name': 'Salbutamol Inhaler', 'category': 'antibiotics', 'current_stock': 58, 'avg_daily_demand': 5, 'demand_std_dev': 2, 'lead_time_days': 10},
+    {'name': 'Metformin 500mg', 'category': 'antidiabetics', 'current_stock': 260, 'avg_daily_demand': 8, 'demand_std_dev': 2, 'lead_time_days': 14},
+    {'name': 'Insulin Glargine 100U/ml', 'category': 'antidiabetics', 'current_stock': 6, 'avg_daily_demand': 3, 'demand_std_dev': 1, 'lead_time_days': 21},
+    {'name': 'Salbutamol Inhaler', 'category': 'respiratory', 'current_stock': 58, 'avg_daily_demand': 5, 'demand_std_dev': 2, 'lead_time_days': 10},
     {'name': 'Tenofovir/Emtricitabine', 'category': 'antiretrovirals', 'current_stock': 210, 'avg_daily_demand': 7, 'demand_std_dev': 1.5, 'lead_time_days': 14},
 ]
 
