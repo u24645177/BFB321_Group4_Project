@@ -550,3 +550,24 @@ a:hover {
     color: white;
     font-weight: 600;
 }
+
+/* KPI Page - Responsive Layout */
+.kpi-grid {
+    display: grid;
+    gap: 20px;
+}
+
+/* Laptop: All KPIs in one horizontal row */
+@media (min-width: 769px) {
+    .kpi-grid {
+        grid-template-columns: repeat(6, minmax(120px, 1fr));
+    }
+}
+
+/* Phone: 2x2 grid layout */
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
