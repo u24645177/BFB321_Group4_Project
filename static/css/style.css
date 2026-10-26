@@ -525,6 +525,54 @@ footer a:hover {
         .btn-order:hover { background-color: var(--primary-dark); color: #fff; }
         .btn-order:active { transform: translateY(1px); }
 
+        /* Icon links for dashboard and order more */
+        .icon-link {
+            display: block;
+            text-decoration: none;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            border: none;
+        }
+
+        .icon-link:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+
+        .icon-link:active {
+            transform: scale(0.98);
+        }
+
+        .icon-image {
+            display: block;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* Dashboard icon link - positioned after brand */
+        .dashboard-link {
+            width: 100%;
+            margin-bottom: 20px;
+            margin-top: 16px;
+        }
+
+        .dashboard-link .icon-image {
+            max-height: 110px;
+        }
+
+        /* Order more icon link - in sidebar */
+        .order-more-link {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .order-more-link .icon-image {
+            max-height: 100px;
+        }
+
         .sidebar-nav ul {
             list-style: none;
             margin: 0;
@@ -689,7 +737,7 @@ footer a:hover {
             .brand-mark { width: 40px; margin-bottom: 0; }
             .brand-name { font-size: 18px; }
             .brand-label { margin-top: 0; }
-            .btn-order { width: auto; margin-left: auto; }
+            .btn-order { width: auto;  }
             .sidebar-nav { flex-basis: 100%; }
             .sidebar-nav ul { flex-direction: row; flex-wrap: wrap; }
 

@@ -34,6 +34,7 @@
     <div class="app-shell">
 
 <!--  Sidebar  -->
+       <!--  Sidebar  -->
         <aside class="sidebar" aria-label="Sidebar">
             {% block sidebar %}
             <a class="brand" href="{{ url_for('index') }}" aria-label="MedSync dashboard home">
@@ -46,10 +47,15 @@
                          alt="" width="232" height="224">
                     <span class="brand-name">MedSync</span>
                 </span>
-                <span class="brand-label">Dashboard</span>
             </a>
 
-            <a href="{{ url_for('reorder') }}" class="btn-order">ORDER MORE</a>
+            <a href="{{ url_for('index') }}" class="icon-link dashboard-link" aria-label="Go to dashboard">
+                <img src="{{ url_for('static', filename='images/dashboard_icon.png') }}" alt="Dashboard" class="icon-image">
+            </a>
+
+            <a href="{{ url_for('reorder') }}" class="icon-link order-more-link" aria-label="Order more">
+                <img src="{{ url_for('static', filename='images/order_more_icon.png') }}" alt="Order more" class="icon-image">
+            </a>
 
        <nav class="sidebar-nav" aria-label="Main navigation">
     <ul>
@@ -80,7 +86,6 @@
 
             {% endblock %}
         </aside>
-
 
 
 <!--  Main area  -->
