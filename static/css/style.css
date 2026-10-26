@@ -767,6 +767,48 @@ footer a:hover {
             .category { flex: 1; }
             .category select { width: 100%; min-width: 0; }
             .content { padding: 16px; }
+
+                        /* Mobile header: move profile to top right */
+            .topbar {
+                position: absolute;
+                top: 0;
+                right: 0;
+                left: auto;
+                width: auto;
+                padding: 12px 16px;
+                background: transparent;
+                border: none;
+                z-index: 100;
+            }
+
+            .topbar .category {
+                display: none;
+            }
+
+            .topbar .profile {
+                margin-left: 0;
+                gap: 8px;
+            }
+
+            .profile-text {
+                display: flex;
+            }
+
+            .avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+
+            /* Adjust sidebar to accommodate profile at top */
+            .sidebar {
+                padding-top: 60px;
+            }
+
+            .brand {
+                width: 100%;
+                margin-top: 0;
+            }
         }
 
 /* Placed after the responsive rules so it wins at every width */
