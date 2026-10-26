@@ -9,9 +9,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a real secret in production!
 
 # ---------------------------------------------------------------------------
-# Sample data (placeholder until the MySQL database is connected in Step 3)
+   # Sample data (placeholder until the MySQL database is connected in Step 3).
+   # Medicines, KPIs and reorder requests live in data/dashboard.py.
 # ---------------------------------------------------------------------------
-
 
 FACILITIES = ['Steve Biko Academic Hospital', 'Kalafong Hospital', 'Tshwane District Hospital']
 
@@ -25,9 +25,6 @@ DELIVERIES = [
     {'id': 'DEL-1045', 'route': 'Depot → Steve Biko Academic', 'vehicle': 'GP 34-56 GH',
      'eta': '2026-10-22 08:00', 'status': 'Scheduled', 'exception': ''},
 ]
-
-
-
 
 # Route: Home/Dashboard
 @app.route('/')
