@@ -64,15 +64,7 @@
                 <span>Tracking</span>
             </a>
         </li>
-        <li>    
-            <a class="nav-item-link" href="{{ url_for('reorder') }}"
-               {% if request.endpoint == 'reorder' %}aria-current="page"{% endif %}>
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 3h18v4H3z"/><path d="M3 9h18v4H3z"/><path d="M3 15h18v4H3z"/>
-                </svg>
-                <span>Reorder Request</span>
-            </a>
-        </li>
+        
         <li>
             <a class="nav-item-link" href="{{ url_for('kpis') }}"
                {% if request.endpoint == 'kpis' %}aria-current="page"{% endif %}>
