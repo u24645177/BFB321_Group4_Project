@@ -31,35 +31,6 @@ def calculate_eoq(demand, order_cost, hold_cost):
     return math.sqrt((2 * demand * order_cost) / hold_cost)
 
 
-def calculate_eoq_with_safety_stock(demand, order_cost, hold_cost, safety_stock):
-    """
-    Calculates EOQ adjusted for safety stock buffer levels.
-
-    Formula:
-        Adjusted EOQ = sqrt((2 * (Demand + Safety_Stock) * Order_Cost) / Holding_Cost)
-
-    Parameters:
-        demand (float): Total annual demand units.
-        order_cost (float): Fixed cost per placed order.
-        hold_cost (float): Annual holding cost per unit.
-        safety_stock (float): Additional inventory kept to mitigate stockout risks.
-
-    Returns:
-        float: Adjusted optimal order quantity units.
-
-    Assumptions:
-        - Demand and ordering costs must be strictly positive.
-        - Holding cost and safety stock must be non-negative.
-    """
-    if demand <= 0:
-        raise ValueError("Demand must be a positive number")
-    if order_cost <= 0:
-        raise ValueError("Ordering cost must be a positive number")
-    if hold_cost <= 0 or safety_stock < 0:
-        raise ValueError("Holding cost and safety stock must be positive numbers")
-    return math.sqrt((2 * (demand + safety_stock) * order_cost) / hold_cost)
-
-
 # Orders Per Year Calculation Function
 def calculate_orders_per_year(demand, order_qty):
     """
