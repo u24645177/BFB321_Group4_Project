@@ -260,7 +260,9 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+    -webkit-overflow-scrolling: touch;
 }
+
 
 /* Status Badge Styling */
 .status-badge {
@@ -389,6 +391,22 @@
 
     .table-responsive {
         font-size: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .table {
+        min-width: 600px;
+    }
+
+    .table thead th {
+        padding: var(--spacing-sm) 8px;
+        font-size: 11px;
+    }
+
+    .table tbody td {
+        padding: var(--spacing-sm) 8px;
+        font-size: 12px;
     }
 
     .btn {
@@ -396,10 +414,15 @@
         margin-bottom: var(--spacing-md);
     }
 
+    .btn-sm {
+        width: auto;
+    }
+
     .row {
         gap: var(--spacing-md);
     }
 }
+
 
 /* utility class */
 .mb-3 {

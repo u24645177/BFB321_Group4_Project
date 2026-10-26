@@ -155,11 +155,17 @@
         font-weight: 600;
     }
 
-/* KPI cards - they’re boxes on the dashboard that show important metrics or numbers */
+/* KPI cards */
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
     .kpi-card {
@@ -523,6 +529,11 @@
         border-color: var(--text-muted);
         color: var(--text-primary);
     }
+
+    @media (max-width: 768px) {
+        .kpi-value { font-size: 28px; }
+    }
+
     .btn-submit:active,
     .btn-clear:active { transform: translateY(1px); }
 
@@ -530,6 +541,7 @@
     @media (max-width: 1200px) {
         .dash-split { grid-template-columns: minmax(0, 1fr); }
     }
+    
 
     @media (max-width: 576px) {
         .panel { padding: 16px; }
@@ -537,8 +549,10 @@
         .data-table th:first-child, .data-table td:first-child { padding-left: 16px; }
         .data-table th:last-child,  .data-table td:last-child  { padding-right: 16px; }
         .order-form { grid-template-columns: minmax(0, 1fr); }
-        .kpi-value { font-size: 32px; }
+        .kpi-value { font-size: 24px; }
+        .kpi-card { padding: 16px; gap: 10px; }
     }
+
 
     @media (prefers-reduced-motion: reduce) {
         .kpi-card:hover { transform: none; }
