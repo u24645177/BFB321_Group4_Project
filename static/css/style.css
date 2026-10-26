@@ -785,6 +785,12 @@ footer a:hover {
                 display: flex;
             }
 
+@media (max-width: 480px) {
+    .topbar .category {
+        display: none;  /* Hide on phone */
+    }
+}
+
             .topbar .profile {
                 margin-left: 0;
                 gap: 8px;

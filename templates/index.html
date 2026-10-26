@@ -13,6 +13,22 @@
 {% set alert_type_labels = {'kpi': 'Critical KPI', 'delayed': 'Delayed order', 'approval': 'Approval bottleneck', 'delivery': 'Delivery issue'} %}
 
 <div class="dash">
+    
+<!-- Mobile-only category filter -->
+<div class="category-mobile">
+    <label for="category-select">Medicine category</label>
+    <select id="category-select-mobile" name="category" onchange="window.location.href='/?category=' + this.value;">
+        {% set current_category = request.args.get('category', 'all') %}
+        <option value="all" {% if current_category == 'all' %}selected{% endif %}>All categories</option>
+        <option value="antibiotics" {% if current_category == 'antibiotics' %}selected{% endif %}>Antibiotics</option>
+        <option value="analgesics" {% if current_category == 'analgesics' %}selected{% endif %}>Analgesics</option>
+        <option value="antiretrovirals" {% if current_category == 'antiretrovirals' %}selected{% endif %}>Antiretrovirals</option>
+        <option value="vaccines" {% if current_category == 'vaccines' %}selected{% endif %}>Vaccines</option>
+        <option value="antidiabetics" {% if current_category == 'antidiabetics' %}selected{% endif %}>Antidiabetics</option>
+        <option value="respiratory" {% if current_category == 'respiratory' %}selected{% endif %}>Respiratory</option>
+    </select>
+</div>
+
     <header>
         <h1 class="dash-title">Dashboard</h1>
         <p class="dash-subtitle">

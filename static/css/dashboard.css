@@ -584,3 +584,47 @@
     background: var(--green);
     color: #fff;
 }
+
+
+/* Mobile-only category filter */
+.category-mobile {
+    display: none;  /* Hidden on desktop */
+}
+
+@media (max-width: 480px) {
+    .category-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+    }
+    
+    .category-mobile label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    
+    .category-mobile select {
+        min-width: 0;
+        width: 100%;
+        padding: 6px 32px 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background-color: var(--surface);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .category-mobile select:focus {
+        border-color: var(--primary);
+    }
+}
+
