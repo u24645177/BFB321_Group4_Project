@@ -554,6 +554,8 @@
     }
 
 
+
+
     @media (prefers-reduced-motion: reduce) {
         .kpi-card:hover { transform: none; }
     }
