@@ -4,6 +4,11 @@
 {% block title %}Reorder Request - MedSync{% endblock %}
 
 {% block content %}
+
+<div class="content">
+    <h2>Order Form</h2>
+    
+             
 <div id="toast" class="toast">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -87,12 +92,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // Don't allow "Required By" dates in the past
-    document.getElementById('requiredBy').min = new Date().toISOString().split('T')[0];
-</script>
-
-
 
 <script>
     // Don't allow "Required By" dates in the past
