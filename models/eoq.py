@@ -1,5 +1,10 @@
 """
-Supply Chain Module: Economic Order Quantity (EOQ) Calculations
+MedSync supply chain model: Economic Order Quantity (EOQ), reorder point,
+safety stock and total annual cost.
+
+These are standalone functions: they take numbers and return numbers, and
+do not use Flask or the database. This keeps the formulas easy to check by
+hand and to unit test on their own (see tests/test_eoq.py).
 """
 import math
 
@@ -23,11 +28,14 @@ def calculate_eoq(demand, order_cost, hold_cost):
         - Holding cost must be greater than 0.
         - Demand cannot be negative.
         - Demand rate and lead time are constant and known.
+        - Ordering cost must be greater than 0.
     """
     if hold_cost <= 0:
         raise ValueError("Holding cost must be greater than 0")
     if demand < 0:
         raise ValueError("Demand cannot be negative")
+    if order_cost <= 0:
+        raise ValueError("Ordering cost must be a positive number")
     return math.sqrt((2 * demand * order_cost) / hold_cost)
 
 
