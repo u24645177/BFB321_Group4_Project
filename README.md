@@ -18,23 +18,35 @@ Digitizing Medicine Supply Chains to Reduce Stockouts in South African Public He
 
 ### Installation Steps
 1. Clone the repository:
-   git clone [https://github.com/u24645177/BFB321_Group4_Project.git](https://github.com/u24645177/BFB321_Group4_Project.git)
+   ```
+   git clone https://github.com/u24645177/BFB321_Group4_Project.git
    cd BFB321_Group4_Project
+   ```
 
-2. Set up virtual environment:
+2. Set up a virtual environment:
    - Windows:
+     ```
      python -m venv venv
      venv\Scripts\activate
+     ```
    - Mac/Linux:
+     ```
      python3 -m venv venv
      source venv/bin/activate
+     ```
 
 3. Install dependencies:
+   ```
    pip install flask pytest
+   ```
 
 4. Run the application:
+   ```
    python app.py
-   Open http://localhost:5001 in your web browser.
+   ```
+   Then open http://localhost:5001 in your web browser.
 
-5. Run test suite:
+5. Run the test suite:
+   ```
    python -m pytest tests/
+   ```
