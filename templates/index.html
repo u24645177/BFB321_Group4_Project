@@ -190,7 +190,7 @@
                             <th scope="col">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="inventory-body">
                         {% for item in inventory %}
                         <tr>
                             <td class="cell-strong">{{ item.name }}</td>
@@ -209,10 +209,53 @@
                     </tbody>
                 </table>
             </div>
+        
+            <!-- Add medicine form (Flow 1): sent to POST /api/medicines by static/js/add-medicine.js -->
+            <h3 class="section-title" style="margin-top: 24px;">Add a medicine</h3>
+            <div id="medicine-message" class="flash" role="status" hidden></div>
+            <form id="medicine-form" class="order-form" novalidate>
+                <div class="field">
+                    <label for="medicine-name">Medicine name</label>
+                    <input id="medicine-name" name="name" type="text" maxlength="100" required>
+                </div>
+                <div class="field">
+                    <label for="medicine-category">Category</label>
+                    <select id="medicine-category" name="category" required>
+                        <option value="">Choose a category</option>
+                        <option value="analgesics">Analgesics</option>
+                        <option value="antibiotics">Antibiotics</option>
+                        <option value="antidiabetics">Antidiabetics</option>
+                        <option value="antiretrovirals">Antiretrovirals</option>
+                        <option value="respiratory">Respiratory</option>
+                        <option value="vaccines">Vaccines</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="medicine-stock">Current stock (units)</label>
+                    <input id="medicine-stock" name="current_stock" type="number" min="0" step="1" required>
+                </div>
+                <div class="field">
+                    <label for="medicine-demand">Average daily demand</label>
+                    <input id="medicine-demand" name="avg_daily_demand" type="number" min="0" step="any" required>
+                </div>
+                <div class="field">
+                    <label for="medicine-std">Demand standard deviation</label>
+                    <input id="medicine-std" name="demand_std_dev" type="number" min="0" step="any" required>
+                </div>
+                <div class="field">
+                    <label for="medicine-lead">Supplier lead time (days)</label>
+                    <input id="medicine-lead" name="lead_time_days" type="number" min="1" step="1" required>
+                </div>
+                <div class="form-actions field-full">
+                    <button type="submit" class="btn-submit" id="medicine-submit">Add medicine</button>
+                </div>
+            </form>
         </section>
 
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/add-medicine.js') }}"></script>
+
 {% endblock %}

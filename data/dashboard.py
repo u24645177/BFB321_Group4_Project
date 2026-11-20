@@ -15,6 +15,7 @@ them, so the page always agrees with itself:
       requests waiting longer than the approval SLA.
 """
 
+import math
 from datetime import date, timedelta
 
 from models.eoq import calculate_reorder_point, calculate_safety_stock
@@ -356,3 +357,75 @@ def get_dashboard_context(category='all'):
         'current_category': category,
     }
     
+
+
+# Adding medicines (Flow 1: form -> POST /api/medicines -> inventory table)
+
+
+MEDICINE_CATEGORIES = ['analgesics', 'antibiotics', 'antidiabetics', 'antiretrovirals', 'respiratory', 'vaccines']
+MAX_NAME_LENGTH = 100
+
+
+def _read_number(data, field, errors, minimum, whole=False):
+    """Read one numeric field, adding an error message if it is missing or out of range."""
+    try:
+        value = float(data.get(field, ''))
+        if not math.isfinite(value):
+            raise ValueError
+        if whole and not value.is_integer():
+            raise ValueError
+        if value < minimum:
+            raise ValueError
+        return int(value) if whole else value
+    except (TypeError, ValueError):
+        kind = 'a whole number' if whole else 'a number'
+        errors[field] = f'Enter {kind} of at least {minimum}.'
+        return None
+
+
+def validate_medicine(data):
+    """
+    Validate a new medicine sent to POST /api/medicines.
+
+    Returns (medicine, errors): medicine is a dict ready for add_medicine()
+    when errors is empty; errors maps field name -> message.
+    """
+    errors = {}
+
+    name = str(data.get('name', '')).strip()
+    if not name:
+        errors['name'] = 'Enter the medicine name.'
+    elif len(name) > MAX_NAME_LENGTH:
+        errors['name'] = f'Keep the name under {MAX_NAME_LENGTH} characters.'
+
+    category = str(data.get('category', '')).strip().lower()
+    if category not in MEDICINE_CATEGORIES:
+        errors['category'] = 'Choose a category from the list.'
+
+    current_stock = _read_number(data, 'current_stock', errors, minimum=0, whole=True)
+    avg_daily_demand = _read_number(data, 'avg_daily_demand', errors, minimum=0)
+    demand_std_dev = _read_number(data, 'demand_std_dev', errors, minimum=0)
+    lead_time_days = _read_number(data, 'lead_time_days', errors, minimum=1, whole=True)
+
+    if errors:
+        return None, errors
+    return {
+        'name': name,
+        'category': category,
+        'current_stock': current_stock,
+        'avg_daily_demand': avg_daily_demand,
+        'demand_std_dev': demand_std_dev,
+        'lead_time_days': lead_time_days,
+    }, {}
+
+
+def medicine_exists(name):
+    """True if a medicine with this name is already stored (ignores capital letters)."""
+    return any(m['name'].lower() == name.lower() for m in MEDICINES)
+
+
+def add_medicine(medicine):
+    """Store a validated medicine and return its inventory row (with reorder point and status)."""
+    MEDICINES.append(medicine)
+    row = next(item for item in build_inventory() if item['name'] == medicine['name'])
+    return {**row, 'category': medicine['category']}
