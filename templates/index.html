@@ -200,7 +200,7 @@
                                 <div class="status-cell">
                                      <span class="status-badge status-{{ item.status | lower }}">{{ item.status }}</span>
                                      {% if item.status != 'Sufficient' %}
-                                    <a class="row-action" href="{{ url_for('reorder', medicine=item.name) }}">Reorder</a>
+                                    <a class="row-action" href="{{ url_for('pages.reorder', medicine=item.name) }}">Reorder</a>
                                     {% endif %}
                                 </div>
                             </td>
