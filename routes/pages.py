@@ -5,7 +5,7 @@ Page routes: every route here returns an HTML page (render_template) or redirect
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from data import dashboard
-from data.deliveries import DELIVERIES, FACILITIES
+from data.deliveries import DELIVERIES, FACILITIES, delivery_summary
 
 pages_bp = Blueprint('pages', __name__)
 
@@ -59,7 +59,7 @@ def reorder():
 @pages_bp.route('/tracking')
 def tracking():
     """Display the logistics delivery board"""
-    return render_template('tracking.html', deliveries=DELIVERIES)
+    return render_template('tracking.html', deliveries=DELIVERIES, summary=delivery_summary())
 
 
 # Route: Update a delivery exception (from the modal)
@@ -81,4 +81,4 @@ def update_exception(delivery_id):
 def kpis():
     """Display the KPI dashboard"""
     context = dashboard.get_dashboard_context()
-    return render_template('kpis.html', kpis=context['metrics'], medicines=context['inventory'], deliveries=DELIVERIES)
+    return render_template('kpis.html', kpis=context['metrics'], medicines=context['inventory'], deliveries=DELIVERIES, summary=delivery_summary())

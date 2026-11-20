@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/macros.html" import kpi_card, status_badge, page_header %}
+{% from "components/macros.html" import kpi_card, status_badge, page_header, delivery_summary_cards %}
 {% set tones = {'good': 'success', 'warning': 'warning', 'critical': 'danger'} %}
 
 {% block title %}KPI Dashboard - MedSync{% endblock %}
@@ -15,6 +15,11 @@
     </div>
     {% endfor %}
 </section>
+
+
+<!-- Delivery KPIs: calculated from the latest delivery updates on the tracking board (Flow 3) -->
+<h2 class="h5">Delivery performance</h2>
+{{ delivery_summary_cards(summary) }}
 
 <div class="row g-4">
 
