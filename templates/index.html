@@ -97,11 +97,12 @@
                         <th scope="col">Request Date</th>
                         <th scope="col">Expected Delivery</th>
                         <th scope="col" class="num">Days in Status</th>
+                        <th scope="col">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="requests-body">
                     {% for r in requests %}
-                    <tr>
+                    <tr data-request-id="{{ r.id }}">
                         <td>
                             <span class="cell-strong">{{ r.medicine }}</span>
                             <span class="cell-sub">{{ r.supplier }}{% if r.emergency %} · Emergency{% endif %}</span>
@@ -113,6 +114,13 @@
                         <td class="num{% if r.needs_attention %} is-attention{% endif %}">
                             {{ r.days_in_status }}
                             {% if r.needs_attention %}<span class="visually-hidden">(needs attention)</span>{% endif %}
+                            </td>
+                                                <td>
+                            {% if r.next_action %}
+                            <button type="button" class="row-action status-step" data-request-id="{{ r.id }}">{{ r.next_action }}</button>
+                            {% else %}
+                            <span class="cell-sub">Complete</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -192,7 +200,7 @@
                     </thead>
                     <tbody id="inventory-body">
                         {% for item in inventory %}
-                        <tr>
+                        <tr data-medicine="{{ item.name }}">
                             <td class="cell-strong">{{ item.name }}</td>
                             <td class="num">{{ '{:,}'.format(item.current_stock) }}</td>
                             <td class="num">{{ '{:,}'.format(item.reorder_point) }}</td>
@@ -257,5 +265,6 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/add-medicine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/request-status.js') }}"></script>
 
 {% endblock %}

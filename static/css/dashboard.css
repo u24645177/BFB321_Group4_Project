@@ -628,3 +628,13 @@
     }
 }
 
+/* Status step buttons in the reorder requests table (Flow 2) */
+button.row-action {
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+}
+button.row-action:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

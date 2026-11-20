@@ -41,6 +41,7 @@
     // Build a table row that looks the same as the rows Flask renders in index.html
     function buildRow(medicine) {
         const row = document.createElement('tr');
+                row.dataset.medicine = medicine.name;   // lets request-status.js find this row later
 
         const name = document.createElement('td');
         name.className = 'cell-strong';
