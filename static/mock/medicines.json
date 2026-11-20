@@ -1,0 +1,10 @@
+{
+  "data": [
+    {"id": 1, "name": "Paracetamol 500mg", "category": "analgesics", "current_stock": 95, "avg_daily_demand": 12, "demand_std_dev": 4, "lead_time_days": 7, "reorder_point": 101, "safety_stock": 17, "status": "Low"},
+    {"id": 2, "name": "Amoxicillin 250mg", "category": "antibiotics", "current_stock": 140, "avg_daily_demand": 6, "demand_std_dev": 2, "lead_time_days": 10, "reorder_point": 70, "safety_stock": 10, "status": "Sufficient"},
+    {"id": 3, "name": "Ibuprofen 400mg", "category": "analgesics", "current_stock": 9, "avg_daily_demand": 10, "demand_std_dev": 3, "lead_time_days": 7, "reorder_point": 83, "safety_stock": 13, "status": "Critical"}
+  ],
+  "page": 1,
+  "size": 10,
+  "total": 3
+}

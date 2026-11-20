@@ -37,7 +37,7 @@
        <!--  Sidebar  -->
         <aside class="sidebar" aria-label="Sidebar">
             {% block sidebar %}
-            <a class="brand" href="{{ url_for('index') }}" aria-label="MedSync dashboard home">
+            <a class="brand" href="{{ url_for('pages.index') }}" aria-label="MedSync dashboard home">
                 <img class="brand-logo-full" src="{{ url_for('static', filename='images/medsync-logo.png') }}"
                      alt="" width="452" height="552">
                 <img class="brand-logo-wordmark" src="{{ url_for('static', filename='images/medsync-wordmark.png') }}"
@@ -49,11 +49,11 @@
                 </span>
             </a>
 
-            <a href="{{ url_for('index') }}" class="icon-link dashboard-link" aria-label="Go to dashboard">
+            <a href="{{ url_for('pages.index') }}" class="icon-link dashboard-link" aria-label="Go to dashboard">
                 <img src="{{ url_for('static', filename='images/dashboard_icon.png') }}" alt="Dashboard" class="icon-image">
             </a>
 
-            <a href="{{ url_for('reorder') }}" class="icon-link order-more-link" aria-label="Order more">
+            <a href="{{ url_for('pages.reorder') }}" class="icon-link order-more-link" aria-label="Order more">
                 <img src="{{ url_for('static', filename='images/order_more_icon.png') }}" alt="Order more" class="icon-image">
             </a>
 
@@ -62,8 +62,8 @@
         {% block sidebar_nav %}
             
         <li>
-            <a class="nav-item-link" href="{{ url_for('tracking') }}"
-               {% if request.endpoint == 'tracking' %}aria-current="page"{% endif %}>
+            <a class="nav-item-link" href="{{ url_for('pages.tracking') }}"
+               {% if request.endpoint == 'pages.tracking' %}aria-current="page"{% endif %}>
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>
                 </svg>
@@ -72,8 +72,8 @@
         </li>
         
         <li>
-            <a class="nav-item-link" href="{{ url_for('kpis') }}"
-               {% if request.endpoint == 'kpis' %}aria-current="page"{% endif %}>
+            <a class="nav-item-link" href="{{ url_for('pages.kpis') }}"
+               {% if request.endpoint == 'pages.kpis' %}aria-current="page"{% endif %}>
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                 </svg>
@@ -92,7 +92,7 @@
         <div class="main">
             {% block topbar %}
             <header class="topbar">
-                {% if request.endpoint == 'index' %}
+                {% if request.endpoint == 'pages.index' %}
                 <div class="category">
                     <label for="category-select">Medicine category</label>
                     <!-- Auto-submits the page with selected category -->
