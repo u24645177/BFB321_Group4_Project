@@ -21,7 +21,7 @@
     <div class="col-md-10 col-lg-7">
         <div class="card">
             <div class="card-body">
-                <form method="POST" action="{{ url_for('pages.reorder') }}" class="needs-validation" novalidate>
+                <form id="reorder-form" method="POST" action="{{ url_for('pages.reorder') }}" class="needs-validation" novalidate>
                     <div class="mb-3">
                         <label for="medicine" class="form-label">Medicine</label>
                         <select class="form-select" id="medicine" name="medicine" required>
@@ -46,17 +46,28 @@
                         <div class="invalid-feedback">Select the facility placing the order.</div>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Supplier</label>
+                        <select class="form-select" id="supplier" name="supplier" required>
+                            <option value="" disabled selected>Choose a supplier…</option>
+                            {% for supplier in suppliers %}
+                            <option>{{ supplier }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Select the supplier to order from.</div>
+                    </div>
+
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <label for="quantity" class="form-label">Quantity (units)</label>
                             <input type="number" class="form-control" id="quantity" name="quantity"
-                                   required min="1" step="1" placeholder="e.g., 740" aria-describedby="quantityHelp">
-                            <div id="quantityHelp" class="form-text">Tip: order the EOQ to minimise total cost.</div>
+                                required min="1" step="1" placeholder="e.g., 740" aria-describedby="eoq-hint">
+                            <div id="eoq-hint" class="form-text" aria-live="polite">Choose a medicine to see the EOQ recommendation.</div>
                             <div class="invalid-feedback">Quantity must be a whole number of at least 1.</div>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <label for="requiredBy" class="form-label">Required By</label>
-                            <input type="date" class="form-control" id="requiredBy" name="required_by" required>
+                            <input type="date" class="form-control" id="requiredBy" name="expected_delivery" required>
                             <div class="invalid-feedback">Choose a date from today onwards.</div>
                         </div>
                     </div>
@@ -108,4 +119,5 @@
         }, 5000);
     }
 </script>
+<script src="{{ url_for('static', filename='js/reorder.js') }}"></script>
 {% endblock %}

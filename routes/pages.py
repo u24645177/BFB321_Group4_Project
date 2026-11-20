@@ -52,7 +52,7 @@ def reorder():
         flash(f"Reorder request for {data.get('quantity')} units of "
               f"{data.get('medicine')} submitted.", 'success')
         return redirect(url_for('pages.reorder'))
-    return render_template('reorder.html', medicines=dashboard.build_inventory(), facilities=FACILITIES)
+    return render_template('reorder.html', medicines=dashboard.build_inventory(), facilities=FACILITIES, suppliers=dashboard.SUPPLIERS)
 
 
 # Route: Order tracking / delivery board

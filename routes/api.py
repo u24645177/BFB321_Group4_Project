@@ -46,3 +46,71 @@ def create_medicine():
     row = dashboard.add_medicine(medicine)
     return jsonify({'data': row}), 201
 
+
+# Route: EOQ order recommendation for one medicine (Flow 2)
+@api_bp.route('/eoq', methods=['GET'])
+def eoq_recommendation():
+    """
+    Recommend an order quantity using the EOQ model.
+
+    Request:  GET /api/eoq?medicine=Paracetamol 500mg
+    Response: 200 {"data": {"medicine", "recommended_quantity", "annual_demand", "order_cost",
+                            "holding_cost", "current_stock", "reorder_point", "status"}}
+              400 when ?medicine= is missing, 404 when the medicine does not exist
+    """
+    name = request.args.get('medicine', '').strip()
+    if not name:
+        return jsonify({'error': 'Add ?medicine= to the URL.'}), 400
+
+    recommendation = dashboard.recommend_order(name)
+    if recommendation is None:
+        return jsonify({'error': f'{name} was not found.'}), 404
+    return jsonify({'data': recommendation}), 200
+
+
+# Route: Create a reorder request (Flow 2)
+@api_bp.route('/requests', methods=['POST'])
+def create_request():
+    """
+    Create a reorder request. It always starts as Awaiting Approval.
+
+    Request:  {"medicine": "Paracetamol 500mg", "quantity": 418, "supplier": "MediSupply SA",
+               "expected_delivery": "2026-12-01", "priority": "Routine", "notes": ""}
+    Response: 201 {"data": {"id", "medicine", "quantity", "supplier", "status", "status_class",
+                            "request_date", "expected_delivery", "emergency", "notes",
+                            "next_status", "next_action"}}
+              400 {"error": "...", "fields": {"field_name": "message"}} when input is invalid
+    """
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({'error': 'Send the request as JSON.'}), 400
+
+    # Reuse the same validation as the dashboard order form
+    order, errors = dashboard.validate_order({key: str(value) for key, value in payload.items()})
+    if errors:
+        return jsonify({'error': 'Please fix the highlighted fields.', 'fields': errors}), 400
+
+    new_request = dashboard.add_request(order, emergency=payload.get('priority') == 'Emergency')
+    return jsonify({'data': dashboard.request_to_json(new_request)}), 201
+
+
+# Route: Move a request to its next status (Flow 2)
+@api_bp.route('/requests/<int:request_id>/status', methods=['PATCH'])
+def advance_request_status(request_id):
+    """
+    Move a request one step: Awaiting Approval -> Approved -> Ordered -> In Transit -> Delivered.
+    Delivering adds the quantity to the medicine's stock.
+
+    Response: 200 {"data": {"request": {...}, "inventory": {"name", "current_stock",
+                            "reorder_point", "safety_stock", "status"}}}
+              404 when the request does not exist, 409 when it is already delivered
+    """
+    updated, error = dashboard.advance_request(request_id)
+    if error:
+        status_code = 404 if 'not found' in error else 409
+        return jsonify({'error': error}), status_code
+
+    return jsonify({'data': {
+        'request': dashboard.request_to_json(updated),
+        'inventory': dashboard.inventory_row(updated['medicine']),
+    }}), 200

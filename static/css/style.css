@@ -897,3 +897,7 @@ footer a:hover {
 }
 
 
+/* Red toast for errors (Flow 2 reorder form) */
+#toast.toast-error {
+    background: #c62828;
+}

@@ -18,7 +18,7 @@ them, so the page always agrees with itself:
 import math
 from datetime import date, timedelta
 
-from models.eoq import calculate_reorder_point, calculate_safety_stock
+from models.eoq import calculate_eoq, calculate_reorder_point, calculate_safety_stock
 
 SERVICE_LEVEL_Z = 1.65      # 95% service level
 APPROVAL_SLA_DAYS = 2       # requests waiting longer than this are a bottleneck
@@ -122,6 +122,10 @@ def _build_sample_requests(today):
 # until the database replaces this in Step 3.
 REQUESTS = _build_sample_requests(date.today())
 
+# Give every request an id so the API can find it (PATCH /api/requests/<id>/status)
+for number, sample in enumerate(REQUESTS, start=1):
+    sample['id'] = number
+
 
 def _format_number(value, decimals):
     return f'{value:,.{decimals}f}'
@@ -211,6 +215,8 @@ def build_request_rows(requests, today):
             'status_class': REQUEST_STATUSES[r['status']],
             'days_in_status': days_in_status,
             'needs_attention': overdue or stalled or r['status'] == 'Delayed',
+            'next_status': NEXT_STATUS.get(r['status']),
+            'next_action': ACTION_LABELS.get(NEXT_STATUS.get(r['status'])),
         })
     return rows
 
@@ -302,16 +308,20 @@ def validate_order(form, today=None):
     }, {}
 
 
-def add_request(order, today=None):
-    """Store a validated order as a new request. New orders always start as Awaiting Approval."""
+def add_request(order, today=None, emergency=False):
+    """Store a validated order as a new request and return it. New orders always start as Awaiting Approval."""
     today = today or date.today()
-    REQUESTS.append({
+    new_request = {
         **order,
+        'id': max((r['id'] for r in REQUESTS), default=0) + 1,
         'status': 'Awaiting Approval',
         'request_date': today,
         'status_since': today,
-        'emergency': False,
-    })
+        'emergency': emergency,
+    }
+    REQUESTS.append(new_request)
+    return new_request
+
 
 def filter_medicines_by_category(category):
     """Filter medicines by category. 'all' returns all medicines."""
@@ -429,3 +439,110 @@ def add_medicine(medicine):
     MEDICINES.append(medicine)
     row = next(item for item in build_inventory() if item['name'] == medicine['name'])
     return {**row, 'category': medicine['category']}
+
+
+# ---------------------------------------------------------------------------
+# Reordering (Flow 2: EOQ recommendation -> request -> status steps -> stock update)
+
+# EOQ cost assumptions (placeholder values until real costs come from the database)
+ORDER_COST = 500               # R per order placed (admin and delivery)
+HOLDING_COST_PER_UNIT = 4      # R to store one unit for a year (storage, expiry risk)
+DAYS_PER_YEAR = 365
+
+# Each status moves to exactly one next status. Delivered is the end.
+# A Delayed order is already on its way, so its next step is Delivered.
+NEXT_STATUS = {
+    'Awaiting Approval': 'Approved',
+    'Approved': 'Ordered',
+    'Ordered': 'In Transit',
+    'In Transit': 'Delivered',
+    'Delayed': 'Delivered',
+}
+
+# Button text for moving a request to each status
+ACTION_LABELS = {
+    'Approved': 'Approve',
+    'Ordered': 'Mark ordered',
+    'In Transit': 'Mark in transit',
+    'Delivered': 'Mark delivered',
+}
+
+
+def find_medicine(name):
+    """Return the stored medicine with this name, or None."""
+    return next((m for m in MEDICINES if m['name'] == name), None)
+
+
+def inventory_row(name):
+    """Return one medicine's inventory row (stock, reorder point, status), or None."""
+    return next((item for item in build_inventory() if item['name'] == name), None)
+
+
+def recommend_order(name):
+    """
+    Use the EOQ model to recommend how many units of a medicine to order.
+
+    Returns None if the medicine does not exist.
+    """
+    medicine = find_medicine(name)
+    if medicine is None:
+        return None
+    annual_demand = medicine['avg_daily_demand'] * DAYS_PER_YEAR
+    eoq = calculate_eoq(annual_demand, ORDER_COST, HOLDING_COST_PER_UNIT)
+    row = inventory_row(name)
+    return {
+        'medicine': name,
+        'recommended_quantity': max(1, round(eoq)),
+        'annual_demand': round(annual_demand),
+        'order_cost': ORDER_COST,
+        'holding_cost': HOLDING_COST_PER_UNIT,
+        'current_stock': row['current_stock'],
+        'reorder_point': row['reorder_point'],
+        'status': row['status'],
+    }
+
+
+def request_to_json(r):
+    """Convert a stored request into JSON-friendly values (dates as YYYY-MM-DD)."""
+    return {
+        'id': r['id'],
+        'medicine': r['medicine'],
+        'quantity': r['quantity'],
+        'supplier': r['supplier'],
+        'status': r['status'],
+        'status_class': REQUEST_STATUSES[r['status']],
+        'request_date': r['request_date'].isoformat(),
+        'expected_delivery': r['expected_delivery'].isoformat(),
+        'emergency': r['emergency'],
+        'notes': r.get('notes', ''),
+        'next_status': NEXT_STATUS.get(r['status']),
+        'next_action': ACTION_LABELS.get(NEXT_STATUS.get(r['status'])),
+    }
+
+
+def advance_request(request_id, today=None):
+    """
+    Move a request to its next status. When it becomes Delivered, the
+    delivered quantity is added to the medicine's current stock.
+
+    Returns (request, error): error is a message when the request
+    cannot move (not found, or already delivered).
+    """
+    today = today or date.today()
+    found = next((r for r in REQUESTS if r['id'] == request_id), None)
+    if found is None:
+        return None, f'Request {request_id} was not found.'
+
+    next_status = NEXT_STATUS.get(found['status'])
+    if next_status is None:
+        return None, f"Request {request_id} is already {found['status']}."
+
+    found['status'] = next_status
+    found['status_since'] = today
+
+    if next_status == 'Delivered':
+        medicine = find_medicine(found['medicine'])
+        if medicine is not None:
+            medicine['current_stock'] += found['quantity']
+
+    return found, None
