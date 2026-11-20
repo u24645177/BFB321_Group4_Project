@@ -7,7 +7,7 @@ Endpoints for medicines, requests, deliveries and KPIs get added here.
 from flask import Blueprint, jsonify, request
 
 from data import dashboard
-
+from data import deliveries
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -114,3 +114,38 @@ def advance_request_status(request_id):
         'request': dashboard.request_to_json(updated),
         'inventory': dashboard.inventory_row(updated['medicine']),
     }}), 200
+
+# Route: List deliveries with their KPI summary (Flow 3)
+@api_bp.route('/deliveries', methods=['GET'])
+def list_deliveries():
+    """
+    Response: 200 {"data": [{"id", "route", "vehicle", "eta", "status", "exception"}],
+                   "summary": {"total", "in_transit", "problems", "delivered",
+                               "delivered_percent", "open_exceptions"}}
+    """
+    return jsonify({'data': deliveries.DELIVERIES, 'summary': deliveries.delivery_summary()}), 200
+
+
+# Route: Update a delivery's status or exception (Flow 3)
+@api_bp.route('/deliveries/<delivery_id>', methods=['PATCH'])
+def update_delivery(delivery_id):
+    """
+    Request:  {"status": "Delayed", "exception": "Vehicle breakdown on N4"}
+    Response: 200 {"data": {"delivery": {...}, "summary": {...}}}
+              400 {"error": "...", "fields": {"field_name": "message"}} when input is invalid
+              404 when the delivery does not exist
+    """
+    delivery = deliveries.find_delivery(delivery_id)
+    if delivery is None:
+        return jsonify({'error': f'Delivery {delivery_id} was not found.'}), 404
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({'error': 'Send the update as JSON.'}), 400
+
+    changes, errors = deliveries.validate_delivery_update(payload)
+    if errors:
+        return jsonify({'error': 'Please fix the highlighted fields.', 'fields': errors}), 400
+
+    updated = deliveries.update_delivery(delivery, changes)
+    return jsonify({'data': {'delivery': updated, 'summary': deliveries.delivery_summary()}}), 200

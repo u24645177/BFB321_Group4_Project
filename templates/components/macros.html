@@ -37,3 +37,14 @@
     <button type="button" class="sort-btn">{{ label }} <span class="sort-icon" aria-hidden="true">↕</span></button>
 </th>
 {% endmacro %}
+
+{# Delivery KPI cards, used on the tracking board and the KPI page (Flow 3).
+   data-summary lets static/js/tracking.js update each number after a change. #}
+{% macro delivery_summary_cards(summary) %}
+<section class="kpi-grid mb-section" aria-label="Delivery KPIs">
+    <div data-summary="in_transit">{{ kpi_card('In transit', summary.in_transit, 'Deliveries on the road now', 'primary') }}</div>
+    <div data-summary="problems">{{ kpi_card('Delayed or failed', summary.problems, 'Target: 0', 'danger') }}</div>
+    <div data-summary="delivered">{{ kpi_card('Delivered', summary.delivered_percent ~ '%', summary.delivered ~ ' of ' ~ summary.total ~ ' deliveries', 'success') }}</div>
+    <div data-summary="open_exceptions">{{ kpi_card('Open exceptions', summary.open_exceptions, 'Issues still to resolve', 'warning') }}</div>
+</section>
+{% endmacro %}
