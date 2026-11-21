@@ -58,6 +58,64 @@
         if (deliveredCard) deliveredCard.textContent = `${summary.delivered} of ${summary.total} deliveries`;
     }
 
+        // ---- Loading the board from the API (loading, empty and error states) ----
+
+    const tableBody = document.getElementById('deliveries-body');
+    const refreshButton = document.getElementById('refresh-deliveries');
+
+    // Build one delivery row, the same as the old server-rendered rows
+    function buildRow(delivery) {
+        const row = tableBody.insertRow();
+        row.dataset.deliveryId = delivery.id;
+
+        [delivery.id, delivery.route, delivery.vehicle, delivery.eta].forEach((value) => {
+            row.insertCell().textContent = value;
+        });
+
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-' + (BADGE_COLOURS[delivery.status] || 'secondary');
+        badge.textContent = delivery.status;
+        row.insertCell().append(badge);
+
+        row.insertCell().textContent = delivery.exception || '—';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-sm btn-outline-danger';
+        button.dataset.bsToggle = 'modal';
+        button.dataset.bsTarget = '#exceptionModal';
+        button.dataset.id = delivery.id;
+        button.dataset.status = delivery.status;
+        button.dataset.exception = delivery.exception;
+        button.textContent = 'Report exception';
+        row.insertCell().append(button);
+    }
+
+    // Load every delivery from GET /api/deliveries and show the right state
+    async function loadDeliveries() {
+        showTableState(tableBody, 'loading', 'Loading deliveries…');
+        refreshButton.disabled = true;
+
+        try {
+            const result = await apiFetch('/api/deliveries');
+
+            if (result.data.length === 0) {
+                showTableState(tableBody, 'empty', 'No deliveries scheduled yet.');
+            } else {
+                clearTableState(tableBody);
+                result.data.forEach(buildRow);
+            }
+            updateSummary(result.summary);
+        } catch (error) {
+            showTableState(tableBody, 'error', 'Could not load deliveries: ' + error.message, loadDeliveries);
+        } finally {
+            refreshButton.disabled = false;
+        }
+    }
+
+    refreshButton.addEventListener('click', loadDeliveries);
+    loadDeliveries();   // load the board as soon as the page opens
+    
     form.addEventListener('submit', async (event) => {
         event.preventDefault();   // stop the normal page reload
         modalError.classList.add('d-none');

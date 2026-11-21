@@ -208,6 +208,11 @@
                                 </div>
                             </td>
                         </tr>
+                        {% else %}
+                        <!-- Empty state: e.g. a category with no medicines yet -->
+                        <tr class="table-state table-state-empty">
+                            <td colspan="4" role="status">No medicines in this category yet. Add one with the form below.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>

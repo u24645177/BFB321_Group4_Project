@@ -90,6 +90,7 @@
             // Update the table from the API response
             const newRow = buildRow(medicine);
             tableBody.append(newRow);
+            clearTableState(tableBody);   // remove the "No medicines" row if it is showing
             newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             showMessage(`${medicine.name} added. Reorder point: ${medicine.reorder_point} units, status: ${medicine.status}.`, false);

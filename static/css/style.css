@@ -959,3 +959,34 @@ footer a:hover {
 @media (prefers-reduced-motion: reduce) {
     .notification { animation: none; }
 }
+
+/* Table loading, empty and error states (static/js/table-states.js) */
+.table-state td {
+    padding: 32px 16px !important;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+.table-state-error td {
+    color: #c62828;
+    font-style: normal;
+}
+.table-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    vertical-align: -3px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: table-spin 0.8s linear infinite;
+}
+.table-state-retry { margin-left: 12px; }
+@keyframes table-spin {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .table-spinner { animation: none; }
+}
+
