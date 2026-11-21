@@ -7,15 +7,7 @@
 
 <div class="content">
     <h2>Order Form</h2>
-    
-             
-<div id="toast" class="toast">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        {{ message }}
-    {% endfor %}
-    {% endwith %}
-</div>
+
 
 <div class="row">
     <div class="col-md-10 col-lg-7">
@@ -107,17 +99,7 @@
 <script>
     // Don't allow "Required By" dates in the past
     document.getElementById('requiredBy').min = new Date().toISOString().split('T')[0];
-    
-    // Show toast if there's a message
-    const toast = document.getElementById('toast');
-    if (toast.textContent.trim()) {
-        toast.classList.add('show');
-        
-        // Hide after 5 seconds
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 5000);
-    }
 </script>
+
 <script src="{{ url_for('static', filename='js/reorder.js') }}"></script>
 {% endblock %}

@@ -10,7 +10,6 @@
     const statusSelect = document.getElementById('exceptionStatus');
     const exceptionText = document.getElementById('exceptionText');
     const modalError = document.getElementById('modal-error');
-    const boardMessage = document.getElementById('board-message');
     const saveButton = form.querySelector('button[type="submit"]');
     let currentButton = null;   // the "Report exception" button that opened the modal
 
@@ -77,9 +76,9 @@
             updateSummary(summary);
             bootstrap.Modal.getInstance(modalElement).hide();
 
-            boardMessage.className = 'alert alert-success';
-            boardMessage.textContent = `Delivery ${delivery.id} updated: ${delivery.status}` +
-                (delivery.exception ? ` (${delivery.exception}).` : '.');
+            notify(`Delivery ${delivery.id} updated: ${delivery.status}` +
+                (delivery.exception ? ` (${delivery.exception}).` : '.'));
+                
         } catch (error) {
             // Keep the modal open and show what to fix
             const fields = error.details && error.details.fields;

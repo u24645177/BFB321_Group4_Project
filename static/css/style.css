@@ -901,3 +901,61 @@ footer a:hover {
 #toast.toast-error {
     background: #c62828;
 }
+
+/* Confirmation messages (static/js/notify.js) - same look after every action */
+.notifications {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(380px, calc(100vw - 40px));
+}
+.notification {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-left: 5px solid #2e7d32;
+    border-radius: 10px;
+    background: #fff;
+    color: #1b1b1b;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+.notification-error { border-left-color: #c62828; }
+.notification-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2e7d32;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+.notification-error .notification-icon { background: #c62828; }
+.notification-text {
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+.notification-close {
+    flex: none;
+    padding: 0 4px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+.notification-close:hover { color: #000; }
+@media (prefers-reduced-motion: reduce) {
+    .notification { animation: none; }
+}

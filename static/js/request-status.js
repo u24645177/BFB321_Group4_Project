@@ -44,17 +44,9 @@
         if (item.status === 'Sufficient' && link) link.remove();
     }
 
-    // Show a short message above the requests table
+    // Show a green (success) or red (error) confirmation message (static/js/notify.js)
     function showMessage(text, isError) {
-        let message = document.getElementById('requests-message');
-        if (!message) {
-            message = document.createElement('div');
-            message.id = 'requests-message';
-            message.setAttribute('role', 'status');
-            requestsBody.closest('section').querySelector('.section-head').after(message);
-        }
-        message.className = isError ? 'flash form-summary' : 'flash';
-        message.textContent = text;
+        notify(text, isError ? 'error' : 'success');
     }
 
     // One listener for every button in the table

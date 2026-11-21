@@ -37,11 +37,6 @@
         </p>
     </header>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-    <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
-    {% endfor %}
-    {% endwith %}
 
 <!-- KPIs section -->
     <section aria-labelledby="kpi-heading">
@@ -220,7 +215,7 @@
         
             <!-- Add medicine form (Flow 1): sent to POST /api/medicines by static/js/add-medicine.js -->
             <h3 class="section-title" style="margin-top: 24px;">Add a medicine</h3>
-            <div id="medicine-message" class="flash" role="status" hidden></div>
+            
             <form id="medicine-form" class="order-form" novalidate>
                 <div class="field">
                     <label for="medicine-name">Medicine name</label>

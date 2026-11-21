@@ -10,15 +10,11 @@
     const quantityInput = document.getElementById('quantity');
     const hint = document.getElementById('eoq-hint');
     const submitButton = form.querySelector('button[type="submit"]');
-    const toast = document.getElementById('toast');
+    
 
-    // Show the green (success) or red (error) pop-up in the top corner for 5 seconds
+    // Show a green (success) or red (error) confirmation message (static/js/notify.js)
     function showToast(text, isError) {
-        toast.textContent = text;
-        toast.classList.toggle('toast-error', isError);
-        toast.classList.add('show');
-        clearTimeout(showToast.timer);
-        showToast.timer = setTimeout(() => toast.classList.remove('show'), 5000);
+        notify(text, isError ? 'error' : 'success');
     }
 
     // Ask the API for the EOQ and put it in the quantity box

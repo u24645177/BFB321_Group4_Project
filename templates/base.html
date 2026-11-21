@@ -128,11 +128,25 @@
         </div>
     </div>
 
+    <!-- Confirmation messages from static/js/notify.js appear here (top-right corner) -->
+    <div id="notifications" class="notifications" aria-live="polite"></div>
+
+    <!-- Flask flash messages, shown as notifications by notify.js -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <span hidden data-flash="{{ category }}">{{ message }}</span>
+    {% endfor %}
+    {% endwith %}
+
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Reusable API helper: apiFetch() - must load before any page script that uses it -->
     <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+
+    <!-- Shared confirmation messages: notify() -->
+    <script src="{{ url_for('static', filename='js/notify.js') }}"></script>
 
     <!-- Our shared JavaScript: sortable tables, form validation, category filter -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
