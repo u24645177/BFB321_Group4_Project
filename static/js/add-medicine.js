@@ -7,15 +7,12 @@
     if (!form) return;   // only runs on the dashboard
 
     const tableBody = document.getElementById('inventory-body');
-    const message = document.getElementById('medicine-message');
     const submitButton = document.getElementById('medicine-submit');
 
-    // Show a green (success) or red (error) message above the form
+    // Show a green (success) or red (error) confirmation message (static/js/notify.js)
     function showMessage(text, isError) {
-        message.textContent = text;
-        message.classList.toggle('form-summary', isError);
-        message.hidden = false;
-    }
+        notify(text, isError ? 'error' : 'success');
+    } 
 
     // Remove the red borders and error text from the last attempt
     function clearFieldErrors() {
@@ -78,7 +75,6 @@
     form.addEventListener('submit', async (event) => {
         event.preventDefault();   // stop the browser reloading the page
         clearFieldErrors();
-        message.hidden = true;
 
         // Collect the form values as the JSON body the API expects
         const body = Object.fromEntries(new FormData(form));
