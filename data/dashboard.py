@@ -113,6 +113,11 @@ def find_medicine(name, facility_id=DEFAULT_FACILITY_ID):
     return fetch_one(MEDICINE_SELECT + " AND m.name = %s", (facility_id, name))
 
 
+def get_medicine(medicine_id, facility_id=DEFAULT_FACILITY_ID):
+    """Return the stored medicine with this id (with its stock), or None."""
+    return fetch_one(MEDICINE_SELECT + " AND m.medicine_id = %s", (facility_id, medicine_id))
+
+
 def get_supplier_names():
     """Supplier names for the order form drop-downs."""
     return [row['name'] for row in fetch_all("SELECT name FROM suppliers ORDER BY name")]
@@ -579,6 +584,69 @@ def validate_medicine(data):
         'unit_cost': unit_cost,
         'order_cost': order_cost,
     }, {}
+
+
+# Fields PATCH /api/medicines/<id> may change: field -> (smallest allowed value, whole number?)
+MEDICINE_UPDATE_FIELDS = {
+    'current_stock': (0, True),
+    'avg_daily_demand': (0, False),
+    'demand_std_dev': (0, False),
+    'lead_time_days': (1, True),
+    'unit_cost': (0.01, False),
+    'order_cost': (0.01, False),
+}
+
+
+def validate_medicine_update(data):
+    """
+    Validate a partial update sent to PATCH /api/medicines/<id>.
+
+    Only the fields sent are checked and changed. Returns (changes, errors):
+    changes maps field -> new value; errors maps field -> message.
+    """
+    errors = {}
+    unknown = [field for field in data if field not in MEDICINE_UPDATE_FIELDS]
+    if unknown:
+        errors['fields'] = f"Only these can be changed: {', '.join(MEDICINE_UPDATE_FIELDS)}."
+    sent = [field for field in MEDICINE_UPDATE_FIELDS if field in data]
+    if not sent and not unknown:
+        errors['fields'] = 'Send at least one field to change.'
+
+    changes = {}
+    for field in sent:
+        minimum, whole = MEDICINE_UPDATE_FIELDS[field]
+        value = _read_number(data, field, errors, minimum=minimum, whole=whole)
+        if value is not None:
+            changes[field] = round(value, 2) if field in ('unit_cost', 'order_cost') else value
+
+    if errors:
+        return None, errors
+    return changes, {}
+
+
+def update_medicine(medicine_id, changes, facility_id=DEFAULT_FACILITY_ID):
+    """
+    Save a validated update and return the medicine as it now is.
+
+    Catalogue fields go to `medicines`; current_stock goes to this facility's
+    `inventory` row. Both are written in one transaction.
+    """
+    catalogue = {field: value for field, value in changes.items() if field != 'current_stock'}
+    with transaction() as cur:
+        if catalogue:
+            # Column names come only from MEDICINE_UPDATE_FIELDS above, never from the request
+            assignments = ', '.join(f"{field} = %s" for field in catalogue)
+            cur.execute(f"UPDATE medicines SET {assignments} WHERE medicine_id = %s",
+                        list(catalogue.values()) + [medicine_id])
+        if 'current_stock' in changes:
+            cur.execute(
+                """
+                UPDATE inventory SET quantity_on_hand = %s
+                WHERE medicine_id = %s AND facility_id = %s
+                """,
+                (changes['current_stock'], medicine_id, facility_id),
+            )
+    return medicine_to_json(get_medicine(medicine_id, facility_id))
 
 
 def medicine_exists(name):

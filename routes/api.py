@@ -93,6 +93,64 @@ def eoq_recommendation():
     return jsonify({'data': recommendation}), 200
 
 
+# Route: Get one medicine
+@api_bp.route('/medicines/<int:medicine_id>', methods=['GET'])
+def get_medicine(medicine_id):
+    """
+    Request:  GET /api/medicines/3
+    Response: 200 {"data": {"id", "name", "category", "current_stock", "avg_daily_demand",
+                            "demand_std_dev", "lead_time_days", "reorder_point", "safety_stock", "status"}}
+              404 when the medicine does not exist
+    """
+    medicine = dashboard.get_medicine(medicine_id)
+    if medicine is None:
+        return jsonify({'error': f'Medicine {medicine_id} was not found.'}), 404
+    return jsonify({'data': dashboard.medicine_to_json(medicine)}), 200
+
+
+# Route: Update a medicine (stock count, demand, lead time or costs)
+@api_bp.route('/medicines/<int:medicine_id>', methods=['PATCH'])
+def update_medicine(medicine_id):
+    """
+    Change one or more fields; anything not sent stays as it is.
+
+    Request:  {"current_stock": 150, "avg_daily_demand": 11, "demand_std_dev": 3,
+               "lead_time_days": 7, "unit_cost": 18.40, "order_cost": 350}   (any of these)
+    Response: 200 {"data": {...the medicine, with its new reorder point and status...}}
+              400 {"error": "...", "fields": {"field_name": "message"}} when input is invalid
+              404 when the medicine does not exist
+    """
+    if dashboard.get_medicine(medicine_id) is None:
+        return jsonify({'error': f'Medicine {medicine_id} was not found.'}), 404
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({'error': 'Send the update as JSON.'}), 400
+
+    changes, errors = dashboard.validate_medicine_update(payload)
+    if errors:
+        return jsonify({'error': 'Please fix the highlighted fields.', 'fields': errors}), 400
+
+    return jsonify({'data': dashboard.update_medicine(medicine_id, changes)}), 200
+
+
+# Route: EOQ reorder recommendation for one medicine, by id
+@api_bp.route('/medicines/<int:medicine_id>/reorder', methods=['GET'])
+def medicine_reorder(medicine_id):
+    """
+    Recommend an order quantity (EOQ) with the reorder point and safety stock.
+
+    Request:  GET /api/medicines/3/reorder
+    Response: 200 {"data": {"medicine", "recommended_quantity", "annual_demand", "order_cost",
+                            "holding_cost", "current_stock", "reorder_point", "status"}}
+              404 when the medicine does not exist
+    """
+    medicine = dashboard.get_medicine(medicine_id)
+    if medicine is None:
+        return jsonify({'error': f'Medicine {medicine_id} was not found.'}), 404
+    return jsonify({'data': dashboard.recommend_order(medicine['name'])}), 200
+
+
 # Route: Create a reorder request (Flow 2)
 @api_bp.route('/requests', methods=['POST'])
 def create_request():
@@ -140,6 +198,22 @@ def advance_request_status(request_id):
         'inventory': dashboard.inventory_row(updated['medicine']),
     }}), 200
 
+# Route: Get one reorder request
+@api_bp.route('/requests/<int:request_id>', methods=['GET'])
+def get_request(request_id):
+    """
+    Request:  GET /api/requests/5
+    Response: 200 {"data": {"id", "medicine", "quantity", "supplier", "status", "status_class",
+                            "request_date", "expected_delivery", "emergency", "notes",
+                            "next_status", "next_action"}}
+              404 when the request does not exist
+    """
+    found = dashboard.get_request(request_id)
+    if found is None:
+        return jsonify({'error': f'Request {request_id} was not found.'}), 404
+    return jsonify({'data': dashboard.request_to_json(found)}), 200
+
+
 # Route: List deliveries with their KPI summary (Flow 3)
 @api_bp.route('/deliveries', methods=['GET'])
 def list_deliveries():
@@ -149,6 +223,20 @@ def list_deliveries():
                                "delivered_percent", "open_exceptions"}}
     """
     return jsonify({'data': deliveries.get_deliveries(), 'summary': deliveries.delivery_summary()}), 200
+
+
+# Route: Get one delivery
+@api_bp.route('/deliveries/<delivery_id>', methods=['GET'])
+def get_delivery(delivery_id):
+    """
+    Request:  GET /api/deliveries/DEL-1042
+    Response: 200 {"data": {"id", "route", "vehicle", "eta", "status", "exception"}}
+              404 when the delivery does not exist
+    """
+    delivery = deliveries.find_delivery(delivery_id)
+    if delivery is None:
+        return jsonify({'error': f'Delivery {delivery_id} was not found.'}), 404
+    return jsonify({'data': delivery}), 200
 
 
 # Route: Update a delivery's status or exception (Flow 3)
