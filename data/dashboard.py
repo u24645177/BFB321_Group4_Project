@@ -594,3 +594,42 @@ def list_kpis(category='all'):
     kpis = build_kpis(filter_requests_by_category(REQUESTS, category))
     return [{field: kpi[field] for field in fields} for kpi in kpis]
 
+
+# ---------------------------------------------------------------------------
+# Live stock metrics (B3.3: calculated from current stock, orders and the EOQ model)
+# ---------------------------------------------------------------------------
+
+def _metric(key, name, value, unit, description, status='good'):
+    """One metric card's data."""
+    return {'key': key, 'name': name, 'value': value, 'display_value': f'{value:,}',
+            'unit': unit, 'description': description, 'status': status}
+
+
+def live_metrics(category='all'):
+    """
+    Totals and supply chain KPIs worked out from the data right now, so they
+    change as soon as stock, medicines or orders change.
+    """
+    names = {m['name'] for m in filter_medicines_by_category(category)}
+    inventory = [item for item in build_inventory() if item['name'] in names]
+    requests = filter_requests_by_category(REQUESTS, category)
+
+    to_restock = [item for item in inventory if item['status'] != 'Sufficient']
+    critical = [item for item in inventory if item['status'] == 'Critical']
+    open_requests = [r for r in requests if r['status'] != 'Delivered']
+    eoq_to_order = sum(recommend_order(item['name'])['recommended_quantity'] for item in to_restock)
+
+    return [
+        _metric('medicines_tracked', 'Medicines tracked', len(inventory), 'items',
+                'Medicines in the inventory.'),
+        _metric('units_in_stock', 'Units in stock', sum(item['current_stock'] for item in inventory), 'units',
+                'All medicines combined.'),
+        _metric('items_to_restock', 'Items to restock', len(to_restock), 'items',
+                'At or below their reorder point.', 'warning' if to_restock else 'good'),
+        _metric('critical_stock', 'Critical stock', len(critical), 'items',
+                'Below safety stock: stockout risk.', 'critical' if critical else 'good'),
+        _metric('open_orders', 'Open reorder requests', len(open_requests), 'orders',
+                'Requested but not yet delivered.'),
+        _metric('eoq_to_order', 'EOQ to order', eoq_to_order, 'units',
+                'EOQ-recommended quantity for the items to restock.', 'warning' if eoq_to_order else 'good'),
+    ]

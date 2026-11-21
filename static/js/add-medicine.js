@@ -93,6 +93,7 @@
             clearTableState(tableBody);   // remove the "No medicines" row if it is showing
             newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+            refreshDashboardKpis();   // live metrics include the new medicine (static/js/live-kpis.js)
             showMessage(`${medicine.name} added. Reorder point: ${medicine.reorder_point} units, status: ${medicine.status}.`, false);
             form.reset();
         } catch (error) {

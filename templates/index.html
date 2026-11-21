@@ -38,7 +38,19 @@
     </header>
 
 
-<!-- KPIs section -->
+<!-- Live stock metrics: loaded from GET /api/kpis by static/js/live-kpis.js -->
+    <section aria-labelledby="metrics-heading">
+        <div class="section-head">
+            <h2 id="metrics-heading" class="section-title">Live stock metrics</h2>
+            <span class="section-note">Calculated from current stock, orders and the EOQ model</span>
+        </div>
+        <ul id="live-metrics" class="kpi-grid plain-list" aria-busy="true">
+            <li class="metrics-state">Loading metrics…</li>
+        </ul>
+    </section>
+
+    
+    <!-- KPIs section -->
     <section aria-labelledby="kpi-heading">
         <div class="section-head">
             <h2 id="kpi-heading" class="section-title">Key performance indicators</h2>

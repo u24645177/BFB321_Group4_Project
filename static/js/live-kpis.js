@@ -32,15 +32,70 @@ function updateKpiCard(kpi) {
     card.querySelector('.kpi-trend').replaceWith(trend);
 }
 
-// Reload every KPI card for the category currently shown on the dashboard
+// ---- Live stock metrics (B3.3) ----
+
+// Build one metric card, styled like the KPI cards below it
+function buildMetricCard(metric) {
+    const card = document.createElement('li');
+    card.className = 'kpi-card kpi-' + metric.status;
+    card.dataset.metric = metric.key;
+
+    const name = document.createElement('p');
+    name.className = 'kpi-name';
+    name.textContent = metric.name;
+
+    const value = document.createElement('p');
+    value.className = 'kpi-value';
+    value.textContent = metric.display_value;
+    const unit = document.createElement('span');
+    unit.className = 'kpi-unit';
+    unit.textContent = metric.unit;
+    value.append(unit);
+
+    const description = document.createElement('p');
+    description.className = 'kpi-desc';
+    description.textContent = metric.description;
+
+    card.append(name, value, description);
+    return card;
+}
+
+// Show the metric cards, or a loading / error message in their place
+function showMetrics(list, metrics) {
+    list.innerHTML = '';
+    metrics.forEach((metric) => list.append(buildMetricCard(metric)));
+    list.setAttribute('aria-busy', 'false');
+}
+
+function showMetricsError(list, message) {
+    list.innerHTML = '';
+    const item = document.createElement('li');
+    item.className = 'metrics-state is-error';
+    item.setAttribute('role', 'alert');
+    item.textContent = 'Could not load the live metrics: ' + message;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn btn-sm btn-outline-secondary';
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', refreshDashboardKpis);
+    item.append(retry);
+    list.append(item);
+    list.setAttribute('aria-busy', 'false');
+}
+
+// Reload the live metrics and every KPI card for the category shown on the dashboard
 async function refreshDashboardKpis() {
-    if (!document.querySelector('[data-kpi]')) return;   // only on the dashboard
+    const metricsList = document.getElementById('live-metrics');
+    if (!metricsList) return;   // only on the dashboard
 
     const category = new URLSearchParams(window.location.search).get('category') || 'all';
     try {
         const result = await apiFetch('/api/kpis?category=' + encodeURIComponent(category));
+        showMetrics(metricsList, result.metrics);
         result.data.forEach(updateKpiCard);
     } catch (error) {
-        notify('Could not refresh the KPIs: ' + error.message, 'error');
+        showMetricsError(metricsList, error.message);
     }
 }
+
+refreshDashboardKpis();   // load the live metrics as soon as the dashboard opens
