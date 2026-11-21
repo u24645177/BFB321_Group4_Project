@@ -32,10 +32,9 @@ def read_page_args():
     return page, size, None
 
 
-def paginate(items, page, size):
-    """One page of a list, in the same {data, page, size, total} shape as the old mock JSON."""
-    start = (page - 1) * size
-    return {'data': items[start:start + size], 'page': page, 'size': size, 'total': len(items)}
+def page_response(items, total, page, size):
+    """One page in the same {data, page, size, total} shape as the old mock JSON."""
+    return {'data': items, 'page': page, 'size': size, 'total': total}
 
 
 # Route: Health check - confirms the API blueprint is registered and running
@@ -199,7 +198,8 @@ def list_medicines():
     if status and status not in dashboard.INVENTORY_STATUSES:
         return jsonify({'error': f"status must be one of: {', '.join(dashboard.INVENTORY_STATUSES)}."}), 400
 
-    return jsonify(paginate(dashboard.list_medicines(category, status), page, size)), 200
+    items, total = dashboard.list_medicines(category, status, page, size)
+    return jsonify(page_response(items, total, page, size)), 200
 
 
 # Route: List reorder requests (replaces static/mock/requests.json)
@@ -220,7 +220,8 @@ def list_requests():
     if status and status not in dashboard.REQUEST_STATUSES:
         return jsonify({'error': f"status must be one of: {', '.join(dashboard.REQUEST_STATUSES)}."}), 400
 
-    return jsonify(paginate(dashboard.list_requests(status), page, size)), 200
+    items, total = dashboard.list_requests(status, page, size)
+    return jsonify(page_response(items, total, page, size)), 200
 
 
 # Route: Dashboard KPIs, calculated live (replaces static/mock/kpis.json)

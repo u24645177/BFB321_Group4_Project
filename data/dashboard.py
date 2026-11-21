@@ -143,10 +143,10 @@ def _request_from_row(row):
     }
 
 
-def get_requests(category='all', status=None):
+def _requests_query(category='all', status=None):
     """
-    Reorder requests, newest first. Cancelled orders are left out because
-    the dashboard has no badge for them.
+    SQL and parameters for reorder requests matching the filters.
+    Cancelled orders are left out because the dashboard has no badge for them.
     """
     sql, params = REQUEST_SELECT + " WHERE o.status <> 'Cancelled'", []
     if category != 'all':
@@ -155,6 +155,12 @@ def get_requests(category='all', status=None):
     if status:
         sql += " AND o.status = %s"
         params.append(status)
+    return sql, params
+
+
+def get_requests(category='all', status=None):
+    """Every reorder request matching the filters, newest first."""
+    sql, params = _requests_query(category, status)
     return [_request_from_row(row) for row in fetch_all(sql + " ORDER BY o.requested_at DESC", params)]
 
 
@@ -794,17 +800,52 @@ def medicine_to_json(med):
     }
 
 
-def list_medicines(category='all', status=None):
-    """All medicines as JSON rows, optionally filtered by category and stock status."""
-    rows = [medicine_to_json(med) for med in get_medicines(category)]
+# The same rule as stock_status(), written in SQL so MySQL can filter by status:
+#   safety stock  = Z * demand std dev * sqrt(lead time)
+#   reorder point = daily demand * lead time + safety stock
+STOCK_STATUS_SQL = f"""
+    CASE
+        WHEN COALESCE(i.quantity_on_hand, 0) < {SERVICE_LEVEL_Z} * m.demand_std_dev * SQRT(m.lead_time_days)
+            THEN 'Critical'
+        WHEN COALESCE(i.quantity_on_hand, 0) <= m.avg_daily_demand * m.lead_time_days
+                + {SERVICE_LEVEL_Z} * m.demand_std_dev * SQRT(m.lead_time_days)
+            THEN 'Low'
+        ELSE 'Sufficient'
+    END
+"""
+
+
+def _page(sql, params, order_by, page, size):
+    """
+    Run one page of a query in MySQL and count every matching row.
+
+    Filtering, counting and paging all happen in the database (COUNT(*) and
+    LIMIT/OFFSET), so only `size` rows are sent to Python however big the
+    table grows. Returns (rows, total).
+    """
+    total = fetch_one(f"SELECT COUNT(*) AS total FROM ({sql}) AS matching", params)['total']
+    rows = fetch_all(f"{sql} ORDER BY {order_by} LIMIT %s OFFSET %s", params + [size, (page - 1) * size])
+    return rows, int(total)
+
+
+def list_medicines(category='all', status=None, page=1, size=10, facility_id=DEFAULT_FACILITY_ID):
+    """One page of medicines as JSON rows, filtered by category and stock status. Returns (rows, total)."""
+    sql, params = MEDICINE_SELECT, [facility_id]
+    if category != 'all':
+        sql += " AND m.category = %s"
+        params.append(category)
     if status:
-        rows = [r for r in rows if r['status'] == status]
-    return rows
+        sql += f" AND ({STOCK_STATUS_SQL}) = %s"
+        params.append(status)
+    rows, total = _page(sql, params, 'm.name', page, size)
+    return [medicine_to_json(med) for med in rows], total
 
 
-def list_requests(status=None):
-    """All reorder requests as JSON rows, optionally filtered by status."""
-    return [request_to_json(r) for r in get_requests(status=status)]
+def list_requests(status=None, page=1, size=10):
+    """One page of reorder requests as JSON rows, newest first. Returns (rows, total)."""
+    sql, params = _requests_query(status=status)
+    rows, total = _page(sql, params, 'o.requested_at DESC, o.order_id DESC', page, size)
+    return [request_to_json(_request_from_row(row)) for row in rows], total
 
 
 def list_kpis(category='all'):
