@@ -638,3 +638,17 @@ button.row-action:disabled {
     opacity: 0.6;
     cursor: wait;
 }
+
+/* Live stock metrics: loading and error message (static/js/live-kpis.js) */
+.metrics-state {
+    grid-column: 1 / -1;
+    padding: 24px;
+    text-align: center;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+.metrics-state.is-error {
+    font-style: normal;
+    color: var(--red-text);
+}
+.metrics-state button { margin-left: 12px; }

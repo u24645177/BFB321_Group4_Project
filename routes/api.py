@@ -230,11 +230,12 @@ def list_kpis():
     Request:  GET /api/kpis?category=analgesics  (optional, defaults to all)
     Response: 200 {"data": [{"key", "name", "value", "display_value", "previous", "target", "unit",
                              "status", "progress_percent", "trend_direction", "trend_improving",
-                             "trend_text", "target_text", "description"}]}
+                             "trend_text", "target_text", "description"}],
+                   "metrics": [{"key", "name", "value", "display_value", "unit", "description", "status"}]}
               400 when the category is invalid
     """
     category = request.args.get('category', 'all').lower()
     if category != 'all' and category not in dashboard.MEDICINE_CATEGORIES:
         return jsonify({'error': f"category must be 'all' or one of: {', '.join(dashboard.MEDICINE_CATEGORIES)}."}), 400
 
-    return jsonify({'data': dashboard.list_kpis(category)}), 200
+    return jsonify({'data': dashboard.list_kpis(category), 'metrics': dashboard.live_metrics(category)}), 200
