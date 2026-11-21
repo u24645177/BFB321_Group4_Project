@@ -149,7 +149,7 @@ def list_deliveries():
                    "summary": {"total", "in_transit", "problems", "delivered",
                                "delivered_percent", "open_exceptions"}}
     """
-    return jsonify({'data': deliveries.DELIVERIES, 'summary': deliveries.delivery_summary()}), 200
+    return jsonify({'data': deliveries.get_deliveries(), 'summary': deliveries.delivery_summary()}), 200
 
 
 # Route: Update a delivery's status or exception (Flow 3)

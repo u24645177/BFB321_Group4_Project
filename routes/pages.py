@@ -5,7 +5,7 @@ Page routes: every route here returns an HTML page (render_template) or redirect
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from data import dashboard
-from data.deliveries import DELIVERIES, FACILITIES, delivery_summary
+from data import deliveries
 
 pages_bp = Blueprint('pages', __name__)
 
@@ -52,28 +52,31 @@ def reorder():
         flash(f"Reorder request for {data.get('quantity')} units of "
               f"{data.get('medicine')} submitted.", 'success')
         return redirect(url_for('pages.reorder'))
-    return render_template('reorder.html', medicines=dashboard.build_inventory(), facilities=FACILITIES, suppliers=dashboard.SUPPLIERS)
+    return render_template('reorder.html', medicines=dashboard.build_inventory(), facilities=deliveries.get_facility_names(),
+                           suppliers=dashboard.get_supplier_names())
 
 
 # Route: Order tracking / delivery board
 @pages_bp.route('/tracking')
 def tracking():
     """Display the logistics delivery board"""
-    return render_template('tracking.html', deliveries=DELIVERIES, summary=delivery_summary())
+    return render_template('tracking.html', deliveries=deliveries.get_deliveries(),
+                           summary=deliveries.delivery_summary())
 
 
 # Route: Update a delivery exception (from the modal)
 @pages_bp.route('/tracking/<delivery_id>/exception', methods=['POST'])
 def update_exception(delivery_id):
-    """Record a delivery exception"""
-    for delivery in DELIVERIES:
-        if delivery['id'] == delivery_id:
-            delivery['status'] = request.form.get('status', delivery['status'])
-            delivery['exception'] = request.form.get('exception', '')
-            flash(f"Delivery {delivery_id} updated.", 'success')
-            break
-    else:
+    """Record a delivery status change or exception (same rules as PATCH /api/deliveries/<id>)"""
+    delivery = deliveries.find_delivery(delivery_id)
+    changes, errors = deliveries.validate_delivery_update(request.form)
+    if delivery is None:
         flash(f"Delivery {delivery_id} not found.", 'danger')
+    elif errors:
+        flash(' '.join(errors.values()), 'danger')
+    else:
+        deliveries.update_delivery(delivery, changes)
+        flash(f"Delivery {delivery_id} updated.", 'success')
     return redirect(url_for('pages.tracking'))
 
 # Route: KPI dashboard
@@ -81,4 +84,5 @@ def update_exception(delivery_id):
 def kpis():
     """Display the KPI dashboard"""
     context = dashboard.get_dashboard_context()
-    return render_template('kpis.html', kpis=context['metrics'], medicines=context['inventory'], deliveries=DELIVERIES, summary=delivery_summary())
+    return render_template('kpis.html', kpis=context['metrics'], medicines=context['inventory'],
+                           deliveries=deliveries.get_deliveries(), summary=deliveries.delivery_summary())
