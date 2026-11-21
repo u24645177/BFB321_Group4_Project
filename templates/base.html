@@ -148,6 +148,9 @@
     <!-- Shared confirmation messages: notify() -->
     <script src="{{ url_for('static', filename='js/notify.js') }}"></script>
 
+    <!-- Shared loading / empty / error rows for tables: showTableState() -->
+    <script src="{{ url_for('static', filename='js/table-states.js') }}"></script>
+
     <!-- Our shared JavaScript: sortable tables, form validation, category filter -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}

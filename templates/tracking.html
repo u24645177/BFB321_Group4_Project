@@ -8,6 +8,10 @@
 
 {{ delivery_summary_cards(summary) }}
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-deliveries">Refresh board</button>
+</div>
+
 
 <div class="table-responsive">
     <table class="table table-striped table-hover align-middle sortable-table">
@@ -25,25 +29,14 @@
             </tr>
         </thead>
 
+         <!-- Rows are loaded from GET /api/deliveries by static/js/tracking.js, with loading, empty and error states from static/js/table-states.js -->
+        
         <tbody id="deliveries-body">
-            {% for d in deliveries %}
-            <tr data-delivery-id="{{ d.id }}">
-                <td>{{ d.id }}</td>
-                <td>{{ d.route }}</td>
-                <td>{{ d.vehicle }}</td>
-                <td>{{ d.eta }}</td>
-                <td>{{ status_badge(d.status) }}</td>
-                <td>{{ d.exception or '—' }}</td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger"
-                            data-bs-toggle="modal" data-bs-target="#exceptionModal"
-                            data-id="{{ d.id }}" data-status="{{ d.status }}" data-exception="{{ d.exception }}">
-                        Report exception
-                    </button>
-                </td>
+            <tr class="table-state table-state-loading">
+                <td colspan="7" role="status"><span class="table-spinner" aria-hidden="true"></span><span>Loading deliveries…</span></td>
             </tr>
-            {% endfor %}
         </tbody>
+
     </table>
 </div>
 
