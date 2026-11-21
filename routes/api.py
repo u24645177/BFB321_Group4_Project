@@ -11,6 +11,32 @@ from data import deliveries
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+
+
+def read_page_args():
+    """
+    Read ?page= and ?size= from the URL.
+
+    Returns (page, size, error): error is a message when either is not a
+    whole number in range, so the endpoint can return 400.
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        size = int(request.args.get('size', DEFAULT_PAGE_SIZE))
+    except ValueError:
+        return None, None, 'page and size must be whole numbers.'
+    if page < 1 or not 1 <= size <= MAX_PAGE_SIZE:
+        return None, None, f'page must be at least 1 and size between 1 and {MAX_PAGE_SIZE}.'
+    return page, size, None
+
+
+def paginate(items, page, size):
+    """One page of a list, in the same {data, page, size, total} shape as the old mock JSON."""
+    start = (page - 1) * size
+    return {'data': items[start:start + size], 'page': page, 'size': size, 'total': len(items)}
+
 
 # Route: Health check - confirms the API blueprint is registered and running
 @api_bp.route('/health', methods=['GET'])
@@ -149,3 +175,66 @@ def update_delivery(delivery_id):
 
     updated = deliveries.update_delivery(delivery, changes)
     return jsonify({'data': {'delivery': updated, 'summary': deliveries.delivery_summary()}}), 200
+
+
+# Route: List medicines (replaces static/mock/medicines.json)
+@api_bp.route('/medicines', methods=['GET'])
+def list_medicines():
+    """
+    Request:  GET /api/medicines?category=analgesics&status=Low&page=1&size=10  (all optional)
+    Response: 200 {"data": [{"id", "name", "category", "current_stock", "avg_daily_demand",
+                             "demand_std_dev", "lead_time_days", "reorder_point", "safety_stock",
+                             "status"}], "page", "size", "total"}
+              400 when a filter or page value is invalid
+    """
+    page, size, error = read_page_args()
+    if error:
+        return jsonify({'error': error}), 400
+
+    category = request.args.get('category', 'all').lower()
+    if category != 'all' and category not in dashboard.MEDICINE_CATEGORIES:
+        return jsonify({'error': f"category must be 'all' or one of: {', '.join(dashboard.MEDICINE_CATEGORIES)}."}), 400
+
+    status = request.args.get('status')
+    if status and status not in dashboard.INVENTORY_STATUSES:
+        return jsonify({'error': f"status must be one of: {', '.join(dashboard.INVENTORY_STATUSES)}."}), 400
+
+    return jsonify(paginate(dashboard.list_medicines(category, status), page, size)), 200
+
+
+# Route: List reorder requests (replaces static/mock/requests.json)
+@api_bp.route('/requests', methods=['GET'])
+def list_requests():
+    """
+    Request:  GET /api/requests?status=Approved&page=1&size=10  (all optional)
+    Response: 200 {"data": [{"id", "medicine", "quantity", "supplier", "status", "status_class",
+                             "request_date", "expected_delivery", "emergency", "notes",
+                             "next_status", "next_action"}], "page", "size", "total"}
+              400 when a filter or page value is invalid
+    """
+    page, size, error = read_page_args()
+    if error:
+        return jsonify({'error': error}), 400
+
+    status = request.args.get('status')
+    if status and status not in dashboard.REQUEST_STATUSES:
+        return jsonify({'error': f"status must be one of: {', '.join(dashboard.REQUEST_STATUSES)}."}), 400
+
+    return jsonify(paginate(dashboard.list_requests(status), page, size)), 200
+
+
+# Route: Dashboard KPIs, calculated live (replaces static/mock/kpis.json)
+@api_bp.route('/kpis', methods=['GET'])
+def list_kpis():
+    """
+    Request:  GET /api/kpis?category=analgesics  (optional, defaults to all)
+    Response: 200 {"data": [{"key", "name", "value", "display_value", "previous", "target", "unit",
+                             "status", "progress_percent", "trend_direction", "trend_improving",
+                             "trend_text", "target_text", "description"}]}
+              400 when the category is invalid
+    """
+    category = request.args.get('category', 'all').lower()
+    if category != 'all' and category not in dashboard.MEDICINE_CATEGORIES:
+        return jsonify({'error': f"category must be 'all' or one of: {', '.join(dashboard.MEDICINE_CATEGORIES)}."}), 400
+
+    return jsonify({'data': dashboard.list_kpis(category)}), 200

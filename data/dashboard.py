@@ -546,3 +546,51 @@ def advance_request(request_id, today=None):
             medicine['current_stock'] += found['quantity']
 
     return found, None
+
+
+# Live list endpoints (replace the mock JSON in static/mock/)
+INVENTORY_STATUSES = ('Critical', 'Low', 'Sufficient')
+
+
+def medicine_to_json(medicine_id, medicine):
+    """One medicine with its EOQ-model figures, in the same shape as the old medicines.json."""
+    row = inventory_row(medicine['name'])
+    return {
+        'id': medicine_id,
+        'name': medicine['name'],
+        'category': medicine['category'],
+        'current_stock': medicine['current_stock'],
+        'avg_daily_demand': medicine['avg_daily_demand'],
+        'demand_std_dev': medicine['demand_std_dev'],
+        'lead_time_days': medicine['lead_time_days'],
+        'reorder_point': row['reorder_point'],
+        'safety_stock': row['safety_stock'],
+        'status': row['status'],
+    }
+
+
+def list_medicines(category='all', status=None):
+    """All medicines as JSON rows, optionally filtered by category and stock status."""
+    rows = [medicine_to_json(number, m) for number, m in enumerate(MEDICINES, start=1)]
+    if category != 'all':
+        rows = [r for r in rows if r['category'] == category]
+    if status:
+        rows = [r for r in rows if r['status'] == status]
+    return rows
+
+
+def list_requests(status=None):
+    """All reorder requests as JSON rows, optionally filtered by status."""
+    rows = [request_to_json(r) for r in REQUESTS]
+    if status:
+        rows = [r for r in rows if r['status'] == status]
+    return rows
+
+
+def list_kpis(category='all'):
+    """The dashboard KPIs, calculated live from the current requests."""
+    fields = ('key', 'name', 'value', 'display_value', 'previous', 'target', 'unit', 'status',
+              'progress_percent', 'trend_direction', 'trend_improving', 'trend_text', 'target_text', 'description')
+    kpis = build_kpis(filter_requests_by_category(REQUESTS, category))
+    return [{field: kpi[field] for field in fields} for kpi in kpis]
+
