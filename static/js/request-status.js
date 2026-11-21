@@ -64,6 +64,7 @@
             const { request, inventory } = result.data;
 
             updateRequestRow(row, request);
+            refreshDashboardKpis();   // KPI cards update from GET /api/kpis (static/js/live-kpis.js)
 
             if (request.status === 'Delivered') {
                 updateInventoryRow(inventory);

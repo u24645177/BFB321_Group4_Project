@@ -1,7 +1,0 @@
-{
-  "data": [
-    {"key": "stockout_frequency", "name": "Medicine Stockout Frequency", "value": 4, "previous": 6, "target": 1, "unit": "/ month", "status": "critical"},
-    {"key": "procurement_lead_time", "name": "Avg Procurement Lead Time", "value": 9.5, "previous": 11.2, "target": 7, "unit": "days", "status": "warning"},
-    {"key": "on_time_delivery", "name": "On-Time Supplier Delivery", "value": 82, "previous": 85, "target": 95, "unit": "%", "status": "critical"}
-  ]
-}

@@ -47,7 +47,7 @@
 
         <ul class="kpi-grid plain-list">
             {% for kpi in metrics %}
-            <li class="kpi-card kpi-{{ kpi.status }}">
+            <li class="kpi-card kpi-{{ kpi.status }}"data-kpi="{{ kpi.key }}">
                 <p class="kpi-name">{{ kpi.name }}</p>
                 <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
 
@@ -265,6 +265,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/add-medicine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/live-kpis.js') }}"></script>
 <script src="{{ url_for('static', filename='js/request-status.js') }}"></script>
 
 {% endblock %}
