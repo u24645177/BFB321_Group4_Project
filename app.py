@@ -1,14 +1,19 @@
 from flask import Flask
 
+from config import get_config
+from errors import register_error_handlers
+from logging_setup import setup_logging
 from routes.pages import pages_bp
 from routes.api import api_bp
 import db
 
-# Create Flask app
+# Create Flask app and load settings for the current environment (config.py)
 app = Flask(__name__)
+app.config.from_object(get_config())
 
-# Configure app
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a real secret in production!
+# Logging and central error handlers (logging_setup.py, errors.py)
+setup_logging(app)
+register_error_handlers(app)
 
 # Open and close a MySQL connection per request (db.py)
 db.init_app(app)
@@ -22,5 +27,5 @@ app.register_blueprint(api_bp)
 
 # Run the app
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=5001)
+        app.run(debug=app.config['DEBUG'], host='localhost', port=5001)
     
