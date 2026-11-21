@@ -17,7 +17,7 @@ deliveries cover every facility.
 """
 
 import math
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from db import fetch_all, fetch_one, transaction
 from models.eoq import calculate_eoq, calculate_reorder_point, calculate_safety_stock
@@ -27,6 +27,7 @@ APPROVAL_SLA_DAYS = 2       # requests waiting longer than this are a bottleneck
 MAX_ORDER_QUANTITY = 100_000
 MAX_NOTES_LENGTH = 500
 DAYS_PER_YEAR = 365
+KPI_WINDOW_DAYS = 30        # KPIs compare the last 30 days with the 30 days before
 
 DEFAULT_FACILITY_ID = 1     # Steve Biko Academic Hospital in the seed data
 
@@ -51,27 +52,30 @@ INVENTORY_STATUSES = ('Critical', 'Low', 'Sufficient')
 MEDICINE_CATEGORIES = ['analgesics', 'antibiotics', 'antidiabetics', 'antiretrovirals', 'respiratory', 'vaccines']
 MAX_NAME_LENGTH = 100
 
-# KPIs from the project proposal. Status thresholds:
+# KPIs from the project proposal. 'value': None means it is calculated live:
+#   - delayed and emergency orders are counted from the request list
+#   - the other five are measured from the database by measure_kpis()
+# 'previous' is the pre-MedSync baseline, used only when the database has no
+# data yet for the previous 30 days. Status thresholds:
 #   goal 'decrease': value <= target is good, value <= limit is a warning, above is critical
 #   goal 'increase': value >= target is good, value >= limit is a warning, below is critical
 # scale_max sets the full width of the progress bar.
 KPI_DEFINITIONS = [
     {'key': 'stockout_frequency', 'name': 'Medicine Stockout Frequency', 'goal': 'decrease',
-     'value': 4, 'previous': 6, 'target': 1, 'limit': 3, 'unit': '/ month', 'decimals': 0, 'scale_max': 10,
+     'value': None, 'previous': 6, 'target': 1, 'limit': 3, 'unit': '/ month', 'decimals': 0, 'scale_max': 10,
      'description': 'Stockout events recorded this month.'},
     {'key': 'procurement_lead_time', 'name': 'Avg Procurement Lead Time', 'goal': 'decrease',
-     'value': 9.5, 'previous': 11.2, 'target': 7, 'limit': 10, 'unit': 'days', 'decimals': 1, 'scale_max': 21,
+     'value': None, 'previous': 11.2, 'target': 7, 'limit': 10, 'unit': 'days', 'decimals': 1, 'scale_max': 21,
      'description': 'From approved request to delivery.'},
     {'key': 'approval_time', 'name': 'Avg Approval Time', 'goal': 'decrease',
-     'value': 30, 'previous': 26, 'target': 24, 'limit': 48, 'unit': 'hrs', 'decimals': 0, 'scale_max': 72,
+     'value': None, 'previous': 26, 'target': 24, 'limit': 48, 'unit': 'hrs', 'decimals': 0, 'scale_max': 72,
      'description': 'From request submission to approval.'},
     {'key': 'record_accuracy', 'name': 'Inventory Record Accuracy', 'goal': 'increase',
-     'value': 96.5, 'previous': 94.1, 'target': 98, 'limit': 95, 'unit': '%', 'decimals': 1, 'scale_max': 100,
+     'value': None, 'previous': 94.1, 'target': 98, 'limit': 95, 'unit': '%', 'decimals': 1, 'scale_max': 100,
      'description': 'System stock matching physical counts.'},
     {'key': 'on_time_delivery', 'name': 'On-Time Supplier Delivery', 'goal': 'increase',
-     'value': 82, 'previous': 85, 'target': 95, 'limit': 85, 'unit': '%', 'decimals': 0, 'scale_max': 100,
+     'value': None, 'previous': 85, 'target': 95, 'limit': 85, 'unit': '%', 'decimals': 0, 'scale_max': 100,
      'description': 'Orders delivered by the expected date.'},
-    # value is filled in from the request list in get_dashboard_context()
     {'key': 'delayed_orders', 'name': 'Delayed / Incomplete Orders', 'goal': 'decrease',
      'value': None, 'previous': 3, 'target': 0, 'limit': 2, 'unit': 'orders', 'decimals': 0, 'scale_max': 10,
      'description': 'Open orders currently marked delayed.'},
@@ -186,15 +190,97 @@ def _kpi_status(value, goal, target, limit):
     return 'warning' if value >= limit else 'critical'
 
 
-def build_kpis(requests):
+def _average(values):
+    return sum(values) / len(values) if values else None
+
+
+def measure_kpis(category='all', now=None):
+    """
+    Measure five proposal KPIs from the database, for the last KPI_WINDOW_DAYS
+    and the window before it (used for the trend).
+
+    Returns {key: {'current': value or None, 'previous': value or None}}.
+    None means there was no data in that window.
+    """
+    now = (now or datetime.now()).replace(microsecond=0)
+    current_start = now - timedelta(days=KPI_WINDOW_DAYS)
+    previous_start = current_start - timedelta(days=KPI_WINDOW_DAYS)
+    windows = {'current': (current_start, now + timedelta(days=1)), 'previous': (previous_start, current_start)}
+
+    category_sql, category_params = ('', []) if category == 'all' else (' AND m.category = %s', [category])
+
+    orders = fetch_all(
+        """
+        SELECT o.requested_at, o.approved_at, o.delivered_at, o.expected_delivery
+        FROM orders o JOIN medicines m ON m.medicine_id = o.medicine_id
+        WHERE (o.approved_at >= %s OR o.delivered_at >= %s)""" + category_sql,
+        [previous_start, previous_start] + category_params)
+    stockouts = fetch_all(
+        """
+        SELECT se.occurred_at
+        FROM stockout_events se JOIN medicines m ON m.medicine_id = se.medicine_id
+        WHERE se.occurred_at >= %s""" + category_sql,
+        [previous_start] + category_params)
+    counts = fetch_all(
+        """
+        SELECT sc.system_quantity, sc.counted_quantity, sc.counted_at
+        FROM stock_counts sc
+        JOIN inventory i ON i.inventory_id = sc.inventory_id
+        JOIN medicines m ON m.medicine_id = i.medicine_id
+        WHERE sc.counted_at >= %s""" + category_sql,
+        [previous_start] + category_params)
+
+    measured = {key: {} for key in ('stockout_frequency', 'procurement_lead_time', 'approval_time',
+                                    'record_accuracy', 'on_time_delivery')}
+    for name, (start, end) in windows.items():
+        def inside(moment):
+            return moment is not None and start <= moment < end
+
+        delivered = [o for o in orders if inside(o['delivered_at'])]
+        approved = [o for o in orders if inside(o['approved_at'])]
+        window_counts = [c for c in counts if inside(c['counted_at'])]
+
+        # Stockouts recorded in the window
+        measured['stockout_frequency'][name] = sum(1 for s in stockouts if inside(s['occurred_at']))
+        # Days from approval to delivery
+        measured['procurement_lead_time'][name] = _average(
+            [(o['delivered_at'] - o['approved_at']).total_seconds() / 86400 for o in delivered if o['approved_at']])
+        # Hours from request to approval
+        measured['approval_time'][name] = _average(
+            [(o['approved_at'] - o['requested_at']).total_seconds() / 3600 for o in approved])
+        # % of deliveries that arrived on or before the expected date
+        on_time = [o['delivered_at'].date() <= o['expected_delivery'] for o in delivered]
+        measured['on_time_delivery'][name] = 100 * sum(on_time) / len(on_time) if on_time else None
+        # % of counted stock that matched the system: 1 - (total difference / total system stock)
+        system_total = sum(c['system_quantity'] for c in window_counts)
+        difference = sum(abs(c['counted_quantity'] - c['system_quantity']) for c in window_counts)
+        measured['record_accuracy'][name] = 100 * (1 - difference / system_total) if system_total else None
+
+    return measured
+
+
+def _rounded(value, decimals):
+    """Round to the KPI's decimals, as a whole number when it has none."""
+    return int(round(value)) if decimals == 0 else round(value, decimals)
+
+
+def build_kpis(requests, category='all'):
     derived = {
         'delayed_orders': sum(1 for r in requests if r['status'] == 'Delayed'),
         'emergency_orders': sum(1 for r in requests if r['emergency']),
     }
+    measured = measure_kpis(category)
     kpis = []
     for definition in KPI_DEFINITIONS:
         kpi = dict(definition)
-        if kpi['value'] is None:
+        no_data = False
+        if kpi['key'] in measured:
+            current, previous = measured[kpi['key']]['current'], measured[kpi['key']]['previous']
+            no_data = current is None
+            kpi['value'] = _rounded(current if current is not None else 0, kpi['decimals'])
+            if previous is not None:
+                kpi['previous'] = _rounded(previous, kpi['decimals'])
+        elif kpi['value'] is None:
             kpi['value'] = derived[kpi['key']]
 
         value, decimals = kpi['value'], kpi['decimals']
@@ -215,6 +301,12 @@ def build_kpis(requests):
             'trend_text': f"{_format_number(abs(delta), decimals)} vs last month",
             'progress_percent': round(min(max(value / kpi['scale_max'], 0), 1) * 100),
         })
+        if no_data:
+            # Nothing to measure yet (e.g. no deliveries in this category recently): say so
+            # instead of showing 0, which would look like a real (and alarming) result.
+            kpi.update({'status': 'warning', 'display_value': '—', 'progress_percent': 0,
+                        'trend_direction': 'flat', 'trend_improving': None,
+                        'trend_text': f'No data in the last {KPI_WINDOW_DAYS} days'})
         kpis.append(kpi)
     return kpis
 
@@ -397,7 +489,7 @@ def get_dashboard_context(category='all'):
     today = date.today()
 
     requests = get_requests(category)
-    kpis = build_kpis(requests)
+    kpis = build_kpis(requests, category)
     request_rows = build_request_rows(requests, today)
     inventory = build_inventory(category)
 
@@ -719,7 +811,7 @@ def list_kpis(category='all'):
     """The dashboard KPIs, calculated from the current requests."""
     fields = ('key', 'name', 'value', 'display_value', 'previous', 'target', 'unit', 'status',
               'progress_percent', 'trend_direction', 'trend_improving', 'trend_text', 'target_text', 'description')
-    kpis = build_kpis(get_requests(category))
+    kpis = build_kpis(get_requests(category), category)
     return [{field: kpi[field] for field in fields} for kpi in kpis]
 
 
