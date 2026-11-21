@@ -990,3 +990,28 @@ footer a:hover {
     .table-spinner { animation: none; }
 }
 
+/* KPI charts (static/js/kpi-charts.js) */
+.chart-figure { margin: 0; }
+.chart-box {
+    position: relative;
+    height: 300px;          /* Chart.js fills this box */
+}
+.chart-figure figcaption {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.chart-state {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+.chart-state.is-error {
+    font-style: normal;
+    color: #c62828;
+}
+

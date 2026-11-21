@@ -592,5 +592,18 @@ def list_kpis(category='all'):
     fields = ('key', 'name', 'value', 'display_value', 'previous', 'target', 'unit', 'status',
               'progress_percent', 'trend_direction', 'trend_improving', 'trend_text', 'target_text', 'description')
     kpis = build_kpis(filter_requests_by_category(REQUESTS, category))
-    return [{field: kpi[field] for field in fields} for kpi in kpis]
+    return [{**{field: kpi[field] for field in fields}, 'improvement_percent': improvement_percent(kpi)}
+        for kpi in kpis]
+
+
+def improvement_percent(kpi):
+    """
+    How much better a KPI is than last month (the baseline), as a percentage.
+    Positive = improved, negative = worse. For 'decrease' KPIs (e.g. stockouts),
+    going down counts as an improvement.
+    """
+    if kpi['previous'] == 0:
+        return 0
+    change = (kpi['value'] - kpi['previous']) / kpi['previous'] * 100
+    return round(-change if kpi['goal'] == 'decrease' else change, 1)
 
