@@ -221,3 +221,6 @@ __marimo__/
 
 # Junk file created by MacOS
 .DS_Store
+
+# Avoid committing backups
+backups/
