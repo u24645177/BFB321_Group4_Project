@@ -61,8 +61,11 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
 4. Create your settings file from the template, then open `.env` and fill in your MySQL user and password:
    - Windows: `copy .env.example .env`
    - Mac/Linux: `cp .env.example .env`
-
-   In `.env`, set `MYSQL_USER` and `MYSQL_PASSWORD` to the project user you create in Database Setup below, and set `SECRET_KEY` to any long random string. A suitable one can be generated with:
+   ```
+   MYSQL_USER=medsync_app
+   MYSQL_PASSWORD=the-password-you-chose-in-Database-Setup
+   SECRET_KEY=any-long-random-string
+   ```
    ```
    python -c "import secrets; print(secrets.token_hex(32))"
    ```
