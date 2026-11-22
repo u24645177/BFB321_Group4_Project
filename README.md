@@ -3,12 +3,24 @@
 ## Project Description
 Digitizing Medicine Supply Chains to Reduce Stockouts in South African Public Healthcare. This application helps medical facilities calculate and track inventory metrics including Economic Order Quantity (EOQ), Safety Stock (SS), and Reorder Points (ROP) to streamline medical supplies management.
 
-## Group Members & Student Numbers
-| Student Name | Student Number |
-| :--- | :--- |
-| Meagan Staples | u24645177 |
-| Despina Papageorgiou | u24627527 |
-| Callum Kenyon-Slade | u24721787 |
+## Group Members, Student Numbers and GitHub Accounts
+**Group 4** | BFB321 Supply Chain Digital Technology | Project: **MedSync: Digitising Medicine Supply Chains to Reduce Stockouts in South African Public Healthcare**
+
+| Student Name | Student Number | GitHub Username |
+| :--- | :--- | :--- |
+| Meagan Staples | u24645177 | u24645177 |
+| Despina Papageorgiou | u24627527 | Despina-papag |
+| Callum Kenyon-Slade | u24721787 | CallumKenyon-Slade |
+
+Repository: https://github.com/u24645177/BFB321_Group4_Project
+
+## Task Allocation
+
+| Member | Role | Work done (see the commit history and merged pull requests) |
+| :--- | :--- | :--- |
+| Despina Papageorgiou | Database and backend | MySQL schema and seed data, `db.py` (parameterised queries, transactions with rollback), REST API endpoints in `routes/api.py`, pagination, filtering and validation, live KPI calculations |
+| Meagan Staples | Frontend integration and video | Blueprint structure, reusable fetch helper, the three end-to-end flows, confirmation messages, loading/empty/error states, live KPI cards and charts, endpoint documentation, screenshots, Part B video |
+| Callum Kenyon-Slade | Report, configuration and testing | `.gitignore`, `.env.example`, `requirements.txt`, `config.py`, `logging_setup.py`, `errors.py`, application wiring in `app.py`, ERD, automated tests, backup/restore/rollback notes, setup runbook, Part C report |
 
 ## Setup & Installation Instructions
 
@@ -36,6 +48,11 @@ Digitizing Medicine Supply Chains to Reduce Stockouts in South African Public He
      source venv/bin/activate
      ```
 
+   On Windows PowerShell, if activation fails with "running scripts is disabled", run this once in the same window and activate again:
+   ```
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+   ```
+
 3. Install dependencies:
    ```
    pip install -r requirements.txt
@@ -44,6 +61,11 @@ Digitizing Medicine Supply Chains to Reduce Stockouts in South African Public He
 4. Create your settings file from the template, then open `.env` and fill in your MySQL user and password:
    - Windows: `copy .env.example .env`
    - Mac/Linux: `cp .env.example .env`
+
+   In `.env`, set `MYSQL_USER` and `MYSQL_PASSWORD` to the project user you create in Database Setup below, and set `SECRET_KEY` to any long random string. A suitable one can be generated with:
+   ```
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
 
 5. Create the database and load the demo data (see [Database Setup](#database-setup) below).
 
@@ -111,6 +133,8 @@ config.py              Development, testing and production settings (APP_ENV)
 db.py                  MySQL connection per request, parameterised queries, transactions with rollback
 errors.py              JSON error responses for the API, friendly error pages for the site
 logging_setup.py       Logging to the console and logs/medsync.log
+requirements.txt       Python dependencies (pinned versions)
+.env.example           Template for the .env settings file (copy to .env; never commit .env)
 routes/pages.py        pages_bp: HTML pages (/, /reorder, /tracking, /kpis)
 routes/api.py          api_bp: JSON endpoints under /api
 data/dashboard.py      Medicines, orders, KPIs and alerts (SQL queries and validation)
@@ -118,12 +142,33 @@ data/deliveries.py     Deliveries and facilities (SQL queries and validation)
 models/eoq.py          EOQ, safety stock and reorder point
 database/              schema.sql and seed.sql
 templates/, static/    HTML templates, CSS and JavaScript
-tests/                 pytest tests
-docs/erd.png           Entity relationship diagram
+tests/                 pytest tests (EOQ, validation, API)
+docs/erd.png           Entity relationship diagram (editable source: docs/medsync.mwb)
+docs/backup-restore.md Backup, restore and rollback notes
 ```
 
 ### Configuration
 Settings come from `.env` (see `.env.example`); nothing secret is stored in the code. `APP_ENV` chooses the settings in `config.py`: `development` (default, debug on), `testing` or `production` (requires `SECRET_KEY`).
+
+## Logging and Error Handling
+`logging_setup.py` writes levelled messages (time, level, module, text) to the console and to `logs/medsync.log` (rotating, three backups of 1 MB). Every error is caught centrally in `errors.py`: API URLs get a JSON `{"error": "..."}` response and pages get a short friendly error page. Stack traces are logged but never shown to the user. Failed database writes are rolled back by `transaction()` in `db.py`.
+
+## Testing
+```
+python -m pytest tests/
+```
+96 automated tests cover the EOQ, safety stock and reorder point calculations (`test_eoq.py`), input validation and the stock status rule (`test_validation.py`) and API routing, error responses and request validation (`test_api.py`). None of them needs MySQL to be running.
+
+## Backup, Restore and Rollback
+Full instructions, with commands for Windows PowerShell, are in [docs/backup-restore.md](docs/backup-restore.md). In short:
+
+- **Back up:** `mysqldump -u root -p --single-transaction --routines --result-file="backups\medsync_YYYY-MM-DD.sql" medsync`
+- **Restore:** `cmd /c "mysql -u root -p medsync < backups\medsync_YYYY-MM-DD.sql"`
+- **Reset to demo data:** run `database/schema.sql` then `database/seed.sql` (this deletes current data).
+- **Rollback:** failed writes roll back automatically; for a bad manual change, restore the latest backup.
+
+Backups are kept out of Git (`backups/` is in `.gitignore`).
+
 
 ## API Endpoints
 
