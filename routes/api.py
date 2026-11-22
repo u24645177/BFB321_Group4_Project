@@ -113,6 +113,8 @@ def get_medicine(medicine_id):
 def update_medicine(medicine_id):
     """
     Change one or more fields; anything not sent stays as it is.
+    A new current_stock is recorded as a physical stock count: it updates the
+    record accuracy KPI, and stock reaching 0 is logged as a stockout.
 
     Request:  {"current_stock": 150, "avg_daily_demand": 11, "demand_std_dev": 3,
                "lead_time_days": 7, "unit_cost": 18.40, "order_cost": 350}   (any of these)

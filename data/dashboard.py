@@ -628,8 +628,13 @@ def update_medicine(medicine_id, changes, facility_id=DEFAULT_FACILITY_ID):
     """
     Save a validated update and return the medicine as it now is.
 
-    Catalogue fields go to `medicines`; current_stock goes to this facility's
-    `inventory` row. Both are written in one transaction.
+    Catalogue fields go to `medicines`. A new current_stock is treated as a
+    physical stock count at this facility, so it also feeds two KPIs:
+        - record accuracy: the count is saved in `stock_counts` against the
+          quantity the system held before (system vs counted)
+        - stockout frequency: stock reaching 0 opens a stockout event; stock
+          above 0 closes any open one
+    Everything is written in one transaction.
     """
     catalogue = {field: value for field, value in changes.items() if field != 'current_stock'}
     with transaction() as cur:
@@ -639,14 +644,51 @@ def update_medicine(medicine_id, changes, facility_id=DEFAULT_FACILITY_ID):
             cur.execute(f"UPDATE medicines SET {assignments} WHERE medicine_id = %s",
                         list(catalogue.values()) + [medicine_id])
         if 'current_stock' in changes:
-            cur.execute(
-                """
-                UPDATE inventory SET quantity_on_hand = %s
-                WHERE medicine_id = %s AND facility_id = %s
-                """,
-                (changes['current_stock'], medicine_id, facility_id),
-            )
+            _record_stock_count(cur, medicine_id, facility_id, changes['current_stock'])
     return medicine_to_json(get_medicine(medicine_id, facility_id))
+
+
+def _record_stock_count(cur, medicine_id, facility_id, counted):
+    """Save a stock count inside an open transaction (see update_medicine)."""
+    cur.execute(
+        """
+        SELECT inventory_id, quantity_on_hand FROM inventory
+        WHERE medicine_id = %s AND facility_id = %s FOR UPDATE
+        """,
+        (medicine_id, facility_id),
+    )
+    row = cur.fetchone()
+    if row is None:
+        return
+    system_quantity = row['quantity_on_hand']
+
+    cur.execute("UPDATE inventory SET quantity_on_hand = %s WHERE inventory_id = %s",
+                (counted, row['inventory_id']))
+    cur.execute(
+        """
+        INSERT INTO stock_counts (inventory_id, system_quantity, counted_quantity, counted_at)
+        VALUES (%s, %s, %s, NOW())
+        """,
+        (row['inventory_id'], system_quantity, counted),
+    )
+    if counted == 0 and system_quantity > 0:
+        cur.execute(
+            "INSERT INTO stockout_events (medicine_id, facility_id, occurred_at) VALUES (%s, %s, NOW())",
+            (medicine_id, facility_id),
+        )
+    elif counted > 0:
+        _resolve_stockouts(cur, medicine_id, facility_id)
+
+
+def _resolve_stockouts(cur, medicine_id, facility_id):
+    """Close any open stockout for this medicine at this facility (stock is back above 0)."""
+    cur.execute(
+        """
+        UPDATE stockout_events SET resolved_at = NOW()
+        WHERE medicine_id = %s AND facility_id = %s AND resolved_at IS NULL
+        """,
+        (medicine_id, facility_id),
+    )
 
 
 def medicine_exists(name):
@@ -804,6 +846,10 @@ def set_order_status(cur, order_id, new_status, sync_delivery=True):
             """,
             (order_id,),
         )
+        # The delivery ends any open stockout of this medicine at this facility
+        cur.execute("SELECT medicine_id, facility_id FROM orders WHERE order_id = %s", (order_id,))
+        delivered = cur.fetchone()
+        _resolve_stockouts(cur, delivered['medicine_id'], delivered['facility_id'])
 
     if not sync_delivery:
         return
