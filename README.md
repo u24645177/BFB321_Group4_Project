@@ -48,6 +48,11 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
      source venv/bin/activate
      ```
 
+   On Windows PowerShell, if activation fails with "running scripts is disabled", run this once in the same window and activate again:
+   ```
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+   ```
+
 3. Install dependencies:
    ```
    pip install -r requirements.txt
@@ -56,6 +61,11 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
 4. Create your settings file from the template, then open `.env` and fill in your MySQL user and password:
    - Windows: `copy .env.example .env`
    - Mac/Linux: `cp .env.example .env`
+
+   In `.env`, set `MYSQL_USER` and `MYSQL_PASSWORD` to the project user you create in Database Setup below, and set `SECRET_KEY` to any long random string. A suitable one can be generated with:
+   ```
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
 
 5. Create the database and load the demo data (see [Database Setup](#database-setup) below).
 
