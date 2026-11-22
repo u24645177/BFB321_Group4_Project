@@ -3,12 +3,24 @@
 ## Project Description
 Digitizing Medicine Supply Chains to Reduce Stockouts in South African Public Healthcare. This application helps medical facilities calculate and track inventory metrics including Economic Order Quantity (EOQ), Safety Stock (SS), and Reorder Points (ROP) to streamline medical supplies management.
 
-## Group Members & Student Numbers
-| Student Name | Student Number |
-| :--- | :--- |
-| Meagan Staples | u24645177 |
-| Despina Papageorgiou | u24627527 |
-| Callum Kenyon-Slade | u24721787 |
+## Group Members, Student Numbers and GitHub Accounts
+**Group 4** | BFB321 Supply Chain Digital Technology | Project: **MedSync: Digitising Medicine Supply Chains to Reduce Stockouts in South African Public Healthcare**
+
+| Student Name | Student Number | GitHub Username |
+| :--- | :--- | :--- |
+| Meagan Staples | u24645177 | u24645177 |
+| Despina Papageorgiou | u24627527 | Despina-papag |
+| Callum Kenyon-Slade | u24721787 | CallumKenyon-Slade |
+
+Repository: https://github.com/u24645177/BFB321_Group4_Project
+
+## Task Allocation
+
+| Member | Role | Work done (see the commit history and merged pull requests) |
+| :--- | :--- | :--- |
+| Despina Papageorgiou | Database and backend | MySQL schema and seed data, `db.py` (parameterised queries, transactions with rollback), REST API endpoints in `routes/api.py`, pagination, filtering and validation, live KPI calculations |
+| Meagan Staples | Frontend integration and video | Blueprint structure, reusable fetch helper, the three end-to-end flows, confirmation messages, loading/empty/error states, live KPI cards and charts, endpoint documentation, screenshots, Part B video |
+| Callum Kenyon-Slade | Report, configuration and testing | `.gitignore`, `.env.example`, `requirements.txt`, `config.py`, `logging_setup.py`, `errors.py`, application wiring in `app.py`, ERD, automated tests, backup/restore/rollback notes, setup runbook, Part C report |
 
 ## Setup & Installation Instructions
 
