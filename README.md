@@ -97,6 +97,7 @@ MedSync uses **MySQL 8.0**. `database/schema.sql` creates the `medsync` database
    GRANT ALL PRIVILEGES ON medsync.* TO 'medsync_app'@'localhost';
    FLUSH PRIVILEGES;
    ```
+   Replace choose-a-password with a password of your own, and use the same password for MYSQL_PASSWORD in .env. If MySQL says the user already exists, reset it with ALTER USER 'medsync_app'@'localhost' IDENTIFIED BY 'your-password'; and then run the GRANT and FLUSH PRIVILEGES lines again.
 
 3. From the project root, build the tables and load the demo data:
    ```sql
