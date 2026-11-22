@@ -133,6 +133,8 @@ config.py              Development, testing and production settings (APP_ENV)
 db.py                  MySQL connection per request, parameterised queries, transactions with rollback
 errors.py              JSON error responses for the API, friendly error pages for the site
 logging_setup.py       Logging to the console and logs/medsync.log
+requirements.txt       Python dependencies (pinned versions)
+.env.example           Template for the .env settings file (copy to .env; never commit .env)
 routes/pages.py        pages_bp: HTML pages (/, /reorder, /tracking, /kpis)
 routes/api.py          api_bp: JSON endpoints under /api
 data/dashboard.py      Medicines, orders, KPIs and alerts (SQL queries and validation)
@@ -140,12 +142,33 @@ data/deliveries.py     Deliveries and facilities (SQL queries and validation)
 models/eoq.py          EOQ, safety stock and reorder point
 database/              schema.sql and seed.sql
 templates/, static/    HTML templates, CSS and JavaScript
-tests/                 pytest tests
-docs/erd.png           Entity relationship diagram
+tests/                 pytest tests (EOQ, validation, API)
+docs/erd.png           Entity relationship diagram (editable source: docs/medsync.mwb)
+docs/backup-restore.md Backup, restore and rollback notes
 ```
 
 ### Configuration
 Settings come from `.env` (see `.env.example`); nothing secret is stored in the code. `APP_ENV` chooses the settings in `config.py`: `development` (default, debug on), `testing` or `production` (requires `SECRET_KEY`).
+
+## Logging and Error Handling
+`logging_setup.py` writes levelled messages (time, level, module, text) to the console and to `logs/medsync.log` (rotating, three backups of 1 MB). Every error is caught centrally in `errors.py`: API URLs get a JSON `{"error": "..."}` response and pages get a short friendly error page. Stack traces are logged but never shown to the user. Failed database writes are rolled back by `transaction()` in `db.py`.
+
+## Testing
+```
+python -m pytest tests/
+```
+96 automated tests cover the EOQ, safety stock and reorder point calculations (`test_eoq.py`), input validation and the stock status rule (`test_validation.py`) and API routing, error responses and request validation (`test_api.py`). None of them needs MySQL to be running.
+
+## Backup, Restore and Rollback
+Full instructions, with commands for Windows PowerShell, are in [docs/backup-restore.md](docs/backup-restore.md). In short:
+
+- **Back up:** `mysqldump -u root -p --single-transaction --routines --result-file="backups\medsync_YYYY-MM-DD.sql" medsync`
+- **Restore:** `cmd /c "mysql -u root -p medsync < backups\medsync_YYYY-MM-DD.sql"`
+- **Reset to demo data:** run `database/schema.sql` then `database/seed.sql` (this deletes current data).
+- **Rollback:** failed writes roll back automatically; for a bad manual change, restore the latest backup.
+
+Backups are kept out of Git (`backups/` is in `.gitignore`).
+
 
 ## API Endpoints
 
