@@ -85,6 +85,8 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
 MedSync uses **MySQL 8.0**. `database/schema.sql` creates the `medsync` database and its tables; `database/seed.sql` fills every table with demo data.
 
 1. Log in to MySQL as root (Windows: the full path is usually `"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`):
+
+   You will be asked for the root password, the one you chose when you installed MySQL. It is not the project password you create in the next step.
    ```
    mysql -u root -p
    ```
