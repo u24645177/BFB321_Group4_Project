@@ -22,18 +22,19 @@
 {{ delivery_summary_cards(summary) }}
 
 <!-- KPI charts (Chart.js): drawn from the live API by static/js/kpi-charts.js -->
-<h2 class="h5">KPI charts</h2>
-<div class="row g-4 mb-section">
+<h2 class="h5 mb-0">KPI charts</h2>
+<div class="row g-4 mt-0 mb-section">
 
     <figure class="col-lg-7 chart-figure">
         <div class="card h-100">
             <div class="card-body">
-                <h3 class="h6">Current stock vs reorder point</h3>
+                <h3>Current stock vs reorder point</h3>
+                <p class="chart-subtitle">Bars that don’t fill their grey track are below the reorder point and need restocking</p>
                 <div class="chart-box">
                     <canvas id="stock-chart" role="img"
                             aria-label="Bar chart of current stock for each medicine, with its reorder point marked"></canvas>
                 </div>
-                <figcaption>Figure 1: Current stock of each medicine (bars, coloured by status) against its EOQ-model reorder point (◆). A bar below its ◆ needs restocking. Source: GET /api/medicines.</figcaption>
+
             </div>
         </div>
     </figure>
@@ -41,12 +42,12 @@
     <figure class="col-lg-5 chart-figure">
         <div class="card h-100">
             <div class="card-body">
-                <h3 class="h6">Deliveries by status</h3>
+                <h3>Deliveries by status</h3>
+                <p class="chart-subtitle">Delayed and failed deliveries need follow-up</p>
                 <div class="chart-box">
                     <canvas id="delivery-chart" role="img"
                             aria-label="Bar chart of the number of deliveries in each status"></canvas>
                 </div>
-                <figcaption>Figure 2: Number of deliveries in each status on the tracking board. Source: GET /api/deliveries.</figcaption>
             </div>
         </div>
     </figure>
@@ -54,7 +55,8 @@
     <figure class="col-12 chart-figure">
         <div class="card">
             <div class="card-body">
-                <h3 class="h6">Before and after: KPIs against last month's baseline</h3>
+                <h3>Before and after: KPIs against last month's baseline</h3>
+                <p class="chart-subtitle">% change from last month. Green improved, coral got worse</p>
                 <div class="row g-4">
                     <div class="col-12">
                         <div class="chart-box">
@@ -82,12 +84,15 @@
                         </table>
                     </div>
                 </div>
-                <figcaption>Figure 3 and Table 1: Each KPI compared with last month (the baseline, before MedSync). Green bars improved, red bars got worse. Delayed and emergency orders are counted live from the reorder requests; the other KPIs use the recorded monthly figures. Source: GET /api/kpis.</figcaption>
             </div>
         </div>
     </figure>
 </div>
 
+<p class="chart-sources">
+    Figure 1: current stock vs EOQ reorder point (GET /api/medicines). Figure 2: deliveries by status (GET /api/deliveries).
+    Figure 3 and Table 1: KPIs vs last month’s baseline; delayed and emergency orders are counted live, the rest use recorded monthly figures (GET /api/kpis).
+</p>
 
 <div class="row g-4">
 

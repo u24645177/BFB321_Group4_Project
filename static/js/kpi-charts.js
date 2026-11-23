@@ -12,11 +12,32 @@
     const improvementCanvas = document.getElementById('improvement-chart');
     const beforeAfterBody = document.getElementById('before-after-body');
 
-    // Status colours (checked for colour-blind separation); every colour also has a label
-    const COLOURS = {
-        good: '#2e7d32', warning: '#d98200', critical: '#c62828',
-        marker: '#3d3d3a', neutral: '#5a7184', grid: '#e6e6e3', text: '#666666',
+        const COLOURS = {
+        good: '#8cc76a', warning: '#e0a243', critical: '#e07a5f',
+        track: '#e2e8f0', neutral: '#94a3b8', grid: '#eef2f6', text: '#64748b', title: '#1e293b',
     };
+
+
+    // Grey for normal statuses; colour only where it matters
+    const DELIVERY_COLOURS = {
+        Scheduled: COLOURS.neutral, 'In Transit': COLOURS.neutral, Delayed: COLOURS.critical,
+        Delivered: COLOURS.good, Failed: COLOURS.critical,
+    };
+
+    // Look and feel for every chart
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = COLOURS.text;
+        Chart.defaults.layout.padding = { top: 8, right: 16 };
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.padding = 16;
+        Chart.defaults.plugins.tooltip.backgroundColor = '#1f2937';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+        Chart.defaults.plugins.tooltip.boxPadding = 4;
+    }
     const STOCK_COLOURS = { Sufficient: COLOURS.good, Low: COLOURS.warning, Critical: COLOURS.critical };
     const DELIVERY_STATUSES = ['Scheduled', 'In Transit', 'Delayed', 'Delivered', 'Failed'];
 
@@ -39,13 +60,14 @@
     // Settings shared by every chart: quiet grid, thin bars, rounded ends
     function axis(title, extra) {
         return {
-            title: { display: Boolean(title), text: title, color: COLOURS.text },
+            title: { display: Boolean(title), text: title, color: COLOURS.title, font: { weight: '600' } },
             grid: { color: COLOURS.grid },
-            ticks: { color: COLOURS.text },
+            border: { display: false },
+            ticks: { color: COLOURS.text, padding: 6 },
             ...extra,
         };
     }
-    const BAR = { borderRadius: 4, maxBarThickness: 36 };
+    const BAR = { borderRadius: 4, maxBarThickness: 28, barPercentage: 0.7 };
 
     // Figure 1: stock vs reorder point
     async function drawStockChart() {
@@ -63,25 +85,26 @@
                 labels: medicines.map((m) => m.name),
                 datasets: [
                     {
-                        type: 'bar', label: 'Current stock', order: 2, ...BAR,
+                        // Coloured bar: current stock, drawn on top of the grey track
+                        type: 'bar', label: 'Current stock', order: 1, grouped: false, ...BAR,
                         data: medicines.map((m) => m.current_stock),
                         backgroundColor: medicines.map((m) => STOCK_COLOURS[m.status]),
                     },
                     {
-                        // Markers only: each reorder point belongs to one medicine, so no joining line
-                        type: 'line', label: 'Reorder point', order: 1, showLine: false,
+                        // Grey track behind each bar: the reorder point to fill up to
+                        type: 'bar', label: 'Reorder point', order: 2, grouped: false, ...BAR,
                         data: medicines.map((m) => m.reorder_point),
-                        pointStyle: 'rectRot', pointRadius: 6, pointHoverRadius: 8,
-                        backgroundColor: COLOURS.marker, borderColor: '#ffffff', borderWidth: 2,
+                        backgroundColor: COLOURS.track,
                     },
                 ],
             },
             options: {
+                indexAxis: 'y',
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
+                interaction: { mode: 'index', axis: 'y', intersect: false },
                 scales: {
-                    x: axis('', { grid: { display: false } }),
-                    y: axis('Units', { beginAtZero: true }),
+                    x: axis('Units in stock', { beginAtZero: true }),
+                    y: axis('', { grid: { display: false }, ticks: { color: COLOURS.text, autoSkip: false } }),
                 },
                 plugins: {
                     // Legend explains the bar colours (status) and the ◆ marker
@@ -92,7 +115,7 @@
                                 ...Object.entries(STOCK_COLOURS).map(([status, colour]) => ({
                                     text: status, fillStyle: colour, strokeStyle: colour, pointStyle: 'rect',
                                 })),
-                                { text: 'Reorder point', fillStyle: COLOURS.marker, strokeStyle: COLOURS.marker, pointStyle: 'rectRot' },
+                                { text: 'Reorder point', fillStyle: COLOURS.track, strokeStyle: COLOURS.track, pointStyle: 'rect' },
                             ],
                         },
                         onClick: () => {},   // the legend explains colours; it does not hide data
@@ -122,16 +145,19 @@
             type: 'bar',
             data: {
                 labels: DELIVERY_STATUSES,
-                datasets: [{ label: 'Deliveries', data: counts, backgroundColor: COLOURS.neutral, ...BAR }],
+                                datasets: [{
+                    label: 'Deliveries', data: counts, ...BAR, maxBarThickness: 44,
+                    backgroundColor: DELIVERY_STATUSES.map((status) => DELIVERY_COLOURS[status]),
+                }],
             },
             options: {
                 maintainAspectRatio: false,
                 scales: {
-                    x: axis('', { grid: { display: false } }),
+                    x: axis('', { grid: { display: false }, ticks: { color: COLOURS.text, maxRotation: 0 } }),
                     y: axis('Deliveries', {
                         beginAtZero: true,
                         suggestedMax: Math.max(...counts) + 1,   // a little headroom above the tallest bar
-                        ticks: { stepSize: 1, color: COLOURS.text },
+                        ticks: { precision: 0, color: COLOURS.text },
                     }),
                 },
                 plugins: { legend: { display: false } },   // one series: the title names it
@@ -158,7 +184,11 @@
                 cell.textContent = text;
                 if (index > 0) cell.className = 'text-end';
             });
-            row.cells[4].style.color = change > 0 ? COLOURS.good : change < 0 ? COLOURS.critical : COLOURS.text;
+            // Show the change as a coloured pill
+            const pill = document.createElement('span');
+            pill.className = 'change-pill ' + (change > 0 ? 'is-better' : change < 0 ? 'is-worse' : 'is-same');
+            pill.textContent = row.cells[4].textContent;
+            row.cells[4].replaceChildren(pill);
         });
     }
 
