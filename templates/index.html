@@ -29,12 +29,27 @@
     </select>
 </div>
 
-    <header>
-        <h1 class="dash-title">Dashboard</h1>
-        <p class="dash-subtitle">
-            Supply chain performance and inventory as of
-            <time datetime="{{ today.isoformat() }}">{{ today.strftime('%d %B %Y') }}</time>
-        </p>
+        <!-- Welcome banner: shows this is the main overview page -->
+    {% set to_restock = inventory | rejectattr('status', 'equalto', 'Sufficient') | list | length %}
+    {% set open_orders = requests | rejectattr('status', 'equalto', 'Delivered') | list | length %}
+    <header class="dash-hero">
+        <div class="dash-hero-text">
+            <p class="dash-hero-eyebrow">Overview · Everything at a glance</p>
+            <h1 class="dash-title">Dashboard</h1>
+            <p class="dash-subtitle">
+                Supply chain performance and inventory as of
+                <time datetime="{{ today.isoformat() }}">{{ today.strftime('%d %B %Y') }}</time>
+            </p>
+            <div class="dash-hero-links">
+                <a href="{{ url_for('pages.kpis') }}">View KPI charts →</a>
+                <a href="{{ url_for('pages.tracking') }}">Delivery board →</a>
+            </div>
+        </div>
+        <ul class="dash-hero-stats plain-list" aria-label="At a glance">
+            <li><span class="hero-stat-value">{{ to_restock }}</span>items to restock</li>
+            <li><span class="hero-stat-value">{{ open_orders }}</span>open orders</li>
+            <li><span class="hero-stat-value">{{ alerts | length }}</span>alerts</li>
+        </ul>
     </header>
 
 

@@ -1058,3 +1058,9 @@ footer a:hover {
     color: #c62828;
 }
 
+/* Sidebar: green ring around the Dashboard button while you're on the dashboard */
+.icon-link[aria-current="page"] {
+    border-radius: 999px;
+    outline: 3px solid #5a9a32;
+    outline-offset: 3px;
+}

@@ -49,7 +49,8 @@
                 </span>
             </a>
 
-            <a href="{{ url_for('pages.index') }}" class="icon-link dashboard-link" aria-label="Go to dashboard">
+            <a href="{{ url_for('pages.index') }}" class="icon-link dashboard-link" aria-label="Go to dashboard"
+               {% if request.endpoint == 'pages.index' %}aria-current="page"{% endif %}>
                 <img src="{{ url_for('static', filename='images/dashboard_icon.png') }}" alt="Dashboard" class="icon-image">
             </a>
 
