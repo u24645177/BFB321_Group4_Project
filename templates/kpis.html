@@ -21,6 +21,79 @@
 <h2 class="h5">Delivery performance</h2>
 {{ delivery_summary_cards(summary) }}
 
+<!-- KPI charts (Chart.js): drawn from the live API by static/js/kpi-charts.js -->
+<h2 class="h5 mb-0">KPI charts</h2>
+<div class="row g-4 mt-0 mb-section">
+
+    <figure class="col-lg-7 chart-figure">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Current stock vs reorder point</h3>
+                <p class="chart-subtitle">Bars that don’t fill their grey track are below the reorder point and need restocking</p>
+                <div class="chart-box">
+                    <canvas id="stock-chart" role="img"
+                            aria-label="Bar chart of current stock for each medicine, with its reorder point marked"></canvas>
+                </div>
+
+            </div>
+        </div>
+    </figure>
+
+    <figure class="col-lg-5 chart-figure">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Deliveries by status</h3>
+                <p class="chart-subtitle">Delayed and failed deliveries need follow-up</p>
+                <div class="chart-box">
+                    <canvas id="delivery-chart" role="img"
+                            aria-label="Bar chart of the number of deliveries in each status"></canvas>
+                </div>
+            </div>
+        </div>
+    </figure>
+
+    <figure class="col-12 chart-figure">
+        <div class="card">
+            <div class="card-body">
+                <h3>Before and after: KPIs against last month's baseline</h3>
+                <p class="chart-subtitle">% change from last month. Green improved, coral got worse</p>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="chart-box">
+                            <canvas id="improvement-chart" role="img"
+                                    aria-label="Bar chart of how much each KPI improved or worsened compared with last month"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-12 table-responsive">
+                        <table class="table table-sm align-middle">
+                            <caption class="visually-hidden">KPI baseline (last month), current value, target and change</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">KPI</th>
+                                    <th scope="col" class="text-end">Baseline</th>
+                                    <th scope="col" class="text-end">Now</th>
+                                    <th scope="col" class="text-end">Target</th>
+                                    <th scope="col" class="text-end">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody id="before-after-body">
+                                <tr class="table-state table-state-loading">
+                                    <td colspan="5" role="status"><span class="table-spinner" aria-hidden="true"></span><span>Loading KPIs…</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </figure>
+</div>
+
+<p class="chart-sources">
+    Figure 1: current stock vs EOQ reorder point (GET /api/medicines). Figure 2: deliveries by status (GET /api/deliveries).
+    Figure 3 and Table 1: KPIs vs last month’s baseline; delayed and emergency orders are counted live, the rest use recorded monthly figures (GET /api/kpis).
+</p>
+
 <div class="row g-4">
 
 <!-- Items needing attention -->
@@ -64,3 +137,10 @@
     </section>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<!-- Chart.js 4 from a CDN, then our charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/kpi-charts.js') }}"></script>
+{% endblock %}
+
