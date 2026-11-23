@@ -188,6 +188,49 @@ Full instructions, with commands for Windows PowerShell, are in [docs/backup-res
 
 Backups are kept out of Git (`backups/` is in `.gitignore`).
 
+## Screenshots
+
+### Setting up
+![Demo data loaded into MySQL](docs/screenshots/01-mysql-seed.png)
+![App running on port 5001](docs/screenshots/03-app-running.png)
+![Automated tests passing](docs/screenshots/04-tests-passing.png)
+
+### Sign in
+![Sign-in page](docs/screenshots/05-sign-in.png)
+![Signed-in user in the header](docs/screenshots/06-signed-in-header.png)
+
+### Dashboard and KPIs
+![Dashboard live stock metrics](docs/screenshots/07-dashboard.png)
+![Dashboard KPIs and reorder requests](docs/screenshots/07b-dashboard-kpis-requests.png)
+![Dashboard alerts](docs/screenshots/08-dashboard-alerts.png)
+![Inventory overview](docs/screenshots/08b-dashboard-inventory.png)
+![KPI dashboard](docs/screenshots/09-kpi-dashboard.png)
+![KPI charts](docs/screenshots/10-kpi-charts.png)
+![Before and after KPI table](docs/screenshots/10b-kpi-before-after.png)
+
+### Flow 1: Add a medicine
+![Add medicine form](docs/screenshots/11-flow1-add-medicine-form.png)
+![Medicine added with its reorder point](docs/screenshots/12-flow1-medicine-added.png)
+
+### Flow 2: Reorder using the EOQ recommendation
+![EOQ recommended quantity](docs/screenshots/13-flow2-eoq-recommendation.png)
+![Order form filled in](docs/screenshots/13b-flow2-form-filled.png)
+![Request submitted](docs/screenshots/14-flow2-request-submitted.png)
+![Request awaiting approval](docs/screenshots/14b-flow2-awaiting-approval.png)
+![Approved](docs/screenshots/15a-flow2-approved.png)
+![Ordered](docs/screenshots/15b-flow2-ordered.png)
+![In transit](docs/screenshots/15c-flow2-in-transit.png)
+![Delivered](docs/screenshots/15d-flow2-delivered.png)
+![Stock updated after delivery](docs/screenshots/15e-flow2-stock-updated.png)
+
+### Flow 3: Report a delivery exception
+![Exception form](docs/screenshots/16-flow3-exception-modal.png)
+![Delivery board updated](docs/screenshots/17-flow3-updated.png)
+
+### API
+![Filtering and pagination](docs/screenshots/18-api-medicines-filtered.png)
+![Validation error](docs/screenshots/19-api-error-400.png)
+
 
 ## API Endpoints
 
