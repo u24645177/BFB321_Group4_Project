@@ -171,7 +171,7 @@ CREATE TABLE deliveries (
     order_id       INT UNSIGNED NOT NULL,
     vehicle_reg    VARCHAR(20) NULL,
     eta            DATETIME NOT NULL,
-    status         ENUM('Scheduled', 'In Transit', 'Delayed', 'Delivered')
+    status         ENUM('Scheduled', 'In Transit', 'Delayed', 'Delivered', 'Failed')
                    NOT NULL DEFAULT 'Scheduled',
     exception_note VARCHAR(255) NULL,
     delivered_at   DATETIME NULL,

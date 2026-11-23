@@ -1,29 +1,41 @@
 """
-Dashboard Data: KPIs, reorder requests, alerts and inventory for the dashboard.
+Dashboard Data: inventory, reorder requests, KPIs and alerts, stored in MySQL.
 
-This is placeholder data until the database is connected (Step 3). The route
-only calls get_dashboard_context(), validate_order() and add_request(), so the
-lists below can later be swapped for database queries without touching the
-template.
+The routes call the functions below and never see any SQL. Every read and
+write goes through db.py, which uses parameterised queries (%s) and wraps
+writes in a transaction that rolls back if anything fails.
 
-Only the raw records are typed in. Everything the dashboard shows as a status
-(KPI colour, trend, inventory level, days in status, alerts) is derived from
-them, so the page always agrees with itself:
-    - Reorder points and safety stock come from models/eoq.py.
+Only raw records are stored. Everything shown as a status (stock level,
+days in status, alerts, KPI colours) is worked out from them here:
+    - Reorder points, safety stock and EOQ come from models/eoq.py.
     - Inventory is Critical below safety stock, Low at or below the reorder point.
-    - Alerts are generated from critical KPIs, delayed or overdue orders and
+    - Alerts come from critical KPIs, delayed or overdue orders and
       requests waiting longer than the approval SLA.
+
+Stock levels are shown for one facility (DEFAULT_FACILITY_ID). Orders and
+deliveries cover every facility.
 """
 
 import math
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
+from db import fetch_all, fetch_one, transaction
 from models.eoq import calculate_eoq, calculate_reorder_point, calculate_safety_stock
 
 SERVICE_LEVEL_Z = 1.65      # 95% service level
 APPROVAL_SLA_DAYS = 2       # requests waiting longer than this are a bottleneck
 MAX_ORDER_QUANTITY = 100_000
 MAX_NOTES_LENGTH = 500
+DAYS_PER_YEAR = 365
+KPI_WINDOW_DAYS = 30        # KPIs compare the last 30 days with the 30 days before
+
+DEFAULT_FACILITY_ID = 1     # Steve Biko Academic Hospital in the seed data
+
+# Used when a new medicine is added without its costs. A R20 unit cost at a
+# 20% holding rate gives R4 per unit per year, the team's original assumption.
+DEFAULT_UNIT_COST = 20.00
+DEFAULT_ORDER_COST = 500.00
+DEFAULT_HOLDING_RATE = 0.20
 
 # Display status -> CSS modifier used by the template's badges
 REQUEST_STATUSES = {
@@ -35,47 +47,35 @@ REQUEST_STATUSES = {
     'Delayed': 'delayed',
 }
 OPEN_STATUSES = ('Approved', 'Ordered', 'In Transit')
+INVENTORY_STATUSES = ('Critical', 'Low', 'Sufficient')
 
-SUPPLIERS = [
-    'MediSupply SA',
-    'PharmaLink Distributors',
-    'HealthCore Wholesale',
-    'Afrimed Logistics',
-]
+MEDICINE_CATEGORIES = ['analgesics', 'antibiotics', 'antidiabetics', 'antiretrovirals', 'respiratory', 'vaccines']
+MAX_NAME_LENGTH = 100
 
-# Demand statistics and supplier lead time drive each medicine's reorder point
-MEDICINES = [
-    {'name': 'Paracetamol 500mg', 'category': 'analgesics', 'current_stock': 95, 'avg_daily_demand': 12, 'demand_std_dev': 4, 'lead_time_days': 7},
-    {'name': 'Amoxicillin 250mg', 'category': 'antibiotics', 'current_stock': 140, 'avg_daily_demand': 6, 'demand_std_dev': 2, 'lead_time_days': 10},
-    {'name': 'Ibuprofen 400mg', 'category': 'analgesics', 'current_stock': 9, 'avg_daily_demand': 10, 'demand_std_dev': 3, 'lead_time_days': 7},
-    {'name': 'Metformin 500mg', 'category': 'antidiabetics', 'current_stock': 260, 'avg_daily_demand': 8, 'demand_std_dev': 2, 'lead_time_days': 14},
-    {'name': 'Insulin Glargine 100U/ml', 'category': 'antidiabetics', 'current_stock': 6, 'avg_daily_demand': 3, 'demand_std_dev': 1, 'lead_time_days': 21},
-    {'name': 'Salbutamol Inhaler', 'category': 'respiratory', 'current_stock': 58, 'avg_daily_demand': 5, 'demand_std_dev': 2, 'lead_time_days': 10},
-    {'name': 'Tenofovir/Emtricitabine', 'category': 'antiretrovirals', 'current_stock': 210, 'avg_daily_demand': 7, 'demand_std_dev': 1.5, 'lead_time_days': 14},
-]
-
-
-# KPIs from the project proposal. Status thresholds:
+# KPIs from the project proposal. 'value': None means it is calculated live:
+#   - delayed and emergency orders are counted from the request list
+#   - the other five are measured from the database by measure_kpis()
+# 'previous' is the pre-MedSync baseline, used only when the database has no
+# data yet for the previous 30 days. Status thresholds:
 #   goal 'decrease': value <= target is good, value <= limit is a warning, above is critical
 #   goal 'increase': value >= target is good, value >= limit is a warning, below is critical
 # scale_max sets the full width of the progress bar.
 KPI_DEFINITIONS = [
     {'key': 'stockout_frequency', 'name': 'Medicine Stockout Frequency', 'goal': 'decrease',
-     'value': 4, 'previous': 6, 'target': 1, 'limit': 3, 'unit': '/ month', 'decimals': 0, 'scale_max': 10,
+     'value': None, 'previous': 6, 'target': 1, 'limit': 3, 'unit': '/ month', 'decimals': 0, 'scale_max': 10,
      'description': 'Stockout events recorded this month.'},
     {'key': 'procurement_lead_time', 'name': 'Avg Procurement Lead Time', 'goal': 'decrease',
-     'value': 9.5, 'previous': 11.2, 'target': 7, 'limit': 10, 'unit': 'days', 'decimals': 1, 'scale_max': 21,
+     'value': None, 'previous': 11.2, 'target': 7, 'limit': 10, 'unit': 'days', 'decimals': 1, 'scale_max': 21,
      'description': 'From approved request to delivery.'},
     {'key': 'approval_time', 'name': 'Avg Approval Time', 'goal': 'decrease',
-     'value': 30, 'previous': 26, 'target': 24, 'limit': 48, 'unit': 'hrs', 'decimals': 0, 'scale_max': 72,
+     'value': None, 'previous': 26, 'target': 24, 'limit': 48, 'unit': 'hrs', 'decimals': 0, 'scale_max': 72,
      'description': 'From request submission to approval.'},
     {'key': 'record_accuracy', 'name': 'Inventory Record Accuracy', 'goal': 'increase',
-     'value': 96.5, 'previous': 94.1, 'target': 98, 'limit': 95, 'unit': '%', 'decimals': 1, 'scale_max': 100,
+     'value': None, 'previous': 94.1, 'target': 98, 'limit': 95, 'unit': '%', 'decimals': 1, 'scale_max': 100,
      'description': 'System stock matching physical counts.'},
     {'key': 'on_time_delivery', 'name': 'On-Time Supplier Delivery', 'goal': 'increase',
-     'value': 82, 'previous': 85, 'target': 95, 'limit': 85, 'unit': '%', 'decimals': 0, 'scale_max': 100,
+     'value': None, 'previous': 85, 'target': 95, 'limit': 85, 'unit': '%', 'decimals': 0, 'scale_max': 100,
      'description': 'Orders delivered by the expected date.'},
-    # value is filled in from the request list in get_dashboard_context()
     {'key': 'delayed_orders', 'name': 'Delayed / Incomplete Orders', 'goal': 'decrease',
      'value': None, 'previous': 3, 'target': 0, 'limit': 2, 'unit': 'orders', 'decimals': 0, 'scale_max': 10,
      'description': 'Open orders currently marked delayed.'},
@@ -85,47 +85,99 @@ KPI_DEFINITIONS = [
 ]
 
 
-def _build_sample_requests(today):
-    """Sample reorder requests, dated relative to today so the demo stays current."""
-    def days_ago(n):
-        return today - timedelta(days=n)
+# ---------------------------------------------------------------------------
+# Reading from the database
+# ---------------------------------------------------------------------------
 
-    return [
-        {'medicine': 'Ibuprofen 400mg', 'quantity': 300, 'supplier': 'MediSupply SA', 'status': 'Awaiting Approval',
-         'request_date': days_ago(4), 'status_since': days_ago(4), 'expected_delivery': today + timedelta(days=10),
-         'emergency': True, 'notes': ''},
-        {'medicine': 'Insulin Glargine 100U/ml', 'quantity': 120, 'supplier': 'HealthCore Wholesale', 'status': 'Awaiting Approval',
-         'request_date': days_ago(1), 'status_since': days_ago(1), 'expected_delivery': today + timedelta(days=21),
-         'emergency': True, 'notes': ''},
-        {'medicine': 'Paracetamol 500mg', 'quantity': 500, 'supplier': 'PharmaLink Distributors', 'status': 'Approved',
-         'request_date': days_ago(3), 'status_since': days_ago(1), 'expected_delivery': today + timedelta(days=7),
-         'emergency': False, 'notes': ''},
-        {'medicine': 'Salbutamol Inhaler', 'quantity': 80, 'supplier': 'MediSupply SA', 'status': 'Ordered',
-         'request_date': days_ago(6), 'status_since': days_ago(3), 'expected_delivery': today + timedelta(days=5),
-         'emergency': False, 'notes': ''},
-        {'medicine': 'Metformin 500mg', 'quantity': 400, 'supplier': 'Afrimed Logistics', 'status': 'In Transit',
-         'request_date': days_ago(16), 'status_since': days_ago(5), 'expected_delivery': days_ago(2),
-         'emergency': False, 'notes': ''},
-        {'medicine': 'Amoxicillin 250mg', 'quantity': 250, 'supplier': 'PharmaLink Distributors', 'status': 'Delivered',
-         'request_date': days_ago(14), 'status_since': days_ago(2), 'expected_delivery': days_ago(3),
-         'emergency': False, 'notes': ''},
-        {'medicine': 'Tenofovir/Emtricitabine', 'quantity': 180, 'supplier': 'HealthCore Wholesale', 'status': 'Delayed',
-         'request_date': days_ago(20), 'status_since': days_ago(6), 'expected_delivery': days_ago(6),
-         'emergency': False, 'notes': ''},
-        {'medicine': 'Amoxicillin 250mg', 'quantity': 100, 'supplier': 'Afrimed Logistics', 'status': 'Delayed',
-         'request_date': days_ago(18), 'status_since': days_ago(4), 'expected_delivery': days_ago(1),
-         'emergency': False, 'notes': ''},
-    ]
+MEDICINE_SELECT = """
+    SELECT m.medicine_id, m.name, m.category, m.unit_cost, m.order_cost, m.holding_rate,
+           m.avg_daily_demand, m.demand_std_dev, m.lead_time_days,
+           COALESCE(i.quantity_on_hand, 0) AS current_stock
+    FROM medicines m
+    LEFT JOIN inventory i ON i.medicine_id = m.medicine_id AND i.facility_id = %s
+    WHERE m.is_active = TRUE
+"""
 
 
-# In-memory request store: orders placed through the form are lost on restart
-# until the database replaces this in Step 3.
-REQUESTS = _build_sample_requests(date.today())
+def get_medicines(category='all', facility_id=DEFAULT_FACILITY_ID):
+    """Active medicines with their stock at one facility, optionally for one category."""
+    sql, params = MEDICINE_SELECT, [facility_id]
+    if category != 'all':
+        sql += " AND m.category = %s"
+        params.append(category)
+    return fetch_all(sql + " ORDER BY m.name", params)
 
-# Give every request an id so the API can find it (PATCH /api/requests/<id>/status)
-for number, sample in enumerate(REQUESTS, start=1):
-    sample['id'] = number
 
+def find_medicine(name, facility_id=DEFAULT_FACILITY_ID):
+    """Return the stored medicine with this name (with its stock), or None."""
+    return fetch_one(MEDICINE_SELECT + " AND m.name = %s", (facility_id, name))
+
+
+def get_medicine(medicine_id, facility_id=DEFAULT_FACILITY_ID):
+    """Return the stored medicine with this id (with its stock), or None."""
+    return fetch_one(MEDICINE_SELECT + " AND m.medicine_id = %s", (facility_id, medicine_id))
+
+
+def get_supplier_names():
+    """Supplier names for the order form drop-downs."""
+    return [row['name'] for row in fetch_all("SELECT name FROM suppliers ORDER BY name")]
+
+
+REQUEST_SELECT = """
+    SELECT o.order_id, m.name AS medicine, m.category, o.quantity, s.name AS supplier, o.status,
+           o.requested_at, o.status_changed_at, o.expected_delivery, o.is_emergency, o.notes
+    FROM orders o
+    JOIN medicines m ON m.medicine_id = o.medicine_id
+    JOIN suppliers s ON s.supplier_id = o.supplier_id
+"""
+
+
+def _request_from_row(row):
+    """Shape one orders row like the request dicts the templates and API use."""
+    return {
+        'id': row['order_id'],
+        'medicine': row['medicine'],
+        'quantity': row['quantity'],
+        'supplier': row['supplier'],
+        'status': row['status'],
+        'request_date': row['requested_at'].date(),
+        'status_since': row['status_changed_at'].date(),
+        'expected_delivery': row['expected_delivery'],
+        'emergency': bool(row['is_emergency']),
+        'notes': row['notes'] or '',
+    }
+
+
+def _requests_query(category='all', status=None):
+    """
+    SQL and parameters for reorder requests matching the filters.
+    Cancelled orders are left out because the dashboard has no badge for them.
+    """
+    sql, params = REQUEST_SELECT + " WHERE o.status <> 'Cancelled'", []
+    if category != 'all':
+        sql += " AND m.category = %s"
+        params.append(category)
+    if status:
+        sql += " AND o.status = %s"
+        params.append(status)
+    return sql, params
+
+
+def get_requests(category='all', status=None):
+    """Every reorder request matching the filters, newest first."""
+    sql, params = _requests_query(category, status)
+    return [_request_from_row(row) for row in fetch_all(sql + " ORDER BY o.requested_at DESC", params)]
+
+
+def get_request(request_id):
+    """One request by id, or None."""
+    row = fetch_one(REQUEST_SELECT + " WHERE o.order_id = %s", (request_id,))
+    return _request_from_row(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# KPIs and dashboard rows
+# ---------------------------------------------------------------------------
 
 def _format_number(value, decimals):
     return f'{value:,.{decimals}f}'
@@ -149,15 +201,97 @@ def _kpi_status(value, goal, target, limit):
     return 'warning' if value >= limit else 'critical'
 
 
-def build_kpis(requests):
+def _average(values):
+    return sum(values) / len(values) if values else None
+
+
+def measure_kpis(category='all', now=None):
+    """
+    Measure five proposal KPIs from the database, for the last KPI_WINDOW_DAYS
+    and the window before it (used for the trend).
+
+    Returns {key: {'current': value or None, 'previous': value or None}}.
+    None means there was no data in that window.
+    """
+    now = (now or datetime.now()).replace(microsecond=0)
+    current_start = now - timedelta(days=KPI_WINDOW_DAYS)
+    previous_start = current_start - timedelta(days=KPI_WINDOW_DAYS)
+    windows = {'current': (current_start, now + timedelta(days=1)), 'previous': (previous_start, current_start)}
+
+    category_sql, category_params = ('', []) if category == 'all' else (' AND m.category = %s', [category])
+
+    orders = fetch_all(
+        """
+        SELECT o.requested_at, o.approved_at, o.delivered_at, o.expected_delivery
+        FROM orders o JOIN medicines m ON m.medicine_id = o.medicine_id
+        WHERE (o.approved_at >= %s OR o.delivered_at >= %s)""" + category_sql,
+        [previous_start, previous_start] + category_params)
+    stockouts = fetch_all(
+        """
+        SELECT se.occurred_at
+        FROM stockout_events se JOIN medicines m ON m.medicine_id = se.medicine_id
+        WHERE se.occurred_at >= %s""" + category_sql,
+        [previous_start] + category_params)
+    counts = fetch_all(
+        """
+        SELECT sc.system_quantity, sc.counted_quantity, sc.counted_at
+        FROM stock_counts sc
+        JOIN inventory i ON i.inventory_id = sc.inventory_id
+        JOIN medicines m ON m.medicine_id = i.medicine_id
+        WHERE sc.counted_at >= %s""" + category_sql,
+        [previous_start] + category_params)
+
+    measured = {key: {} for key in ('stockout_frequency', 'procurement_lead_time', 'approval_time',
+                                    'record_accuracy', 'on_time_delivery')}
+    for name, (start, end) in windows.items():
+        def inside(moment):
+            return moment is not None and start <= moment < end
+
+        delivered = [o for o in orders if inside(o['delivered_at'])]
+        approved = [o for o in orders if inside(o['approved_at'])]
+        window_counts = [c for c in counts if inside(c['counted_at'])]
+
+        # Stockouts recorded in the window
+        measured['stockout_frequency'][name] = sum(1 for s in stockouts if inside(s['occurred_at']))
+        # Days from approval to delivery
+        measured['procurement_lead_time'][name] = _average(
+            [(o['delivered_at'] - o['approved_at']).total_seconds() / 86400 for o in delivered if o['approved_at']])
+        # Hours from request to approval
+        measured['approval_time'][name] = _average(
+            [(o['approved_at'] - o['requested_at']).total_seconds() / 3600 for o in approved])
+        # % of deliveries that arrived on or before the expected date
+        on_time = [o['delivered_at'].date() <= o['expected_delivery'] for o in delivered]
+        measured['on_time_delivery'][name] = 100 * sum(on_time) / len(on_time) if on_time else None
+        # % of counted stock that matched the system: 1 - (total difference / total system stock)
+        system_total = sum(c['system_quantity'] for c in window_counts)
+        difference = sum(abs(c['counted_quantity'] - c['system_quantity']) for c in window_counts)
+        measured['record_accuracy'][name] = 100 * (1 - difference / system_total) if system_total else None
+
+    return measured
+
+
+def _rounded(value, decimals):
+    """Round to the KPI's decimals, as a whole number when it has none."""
+    return int(round(value)) if decimals == 0 else round(value, decimals)
+
+
+def build_kpis(requests, category='all'):
     derived = {
         'delayed_orders': sum(1 for r in requests if r['status'] == 'Delayed'),
         'emergency_orders': sum(1 for r in requests if r['emergency']),
     }
+    measured = measure_kpis(category)
     kpis = []
     for definition in KPI_DEFINITIONS:
         kpi = dict(definition)
-        if kpi['value'] is None:
+        no_data = False
+        if kpi['key'] in measured:
+            current, previous = measured[kpi['key']]['current'], measured[kpi['key']]['previous']
+            no_data = current is None
+            kpi['value'] = _rounded(current if current is not None else 0, kpi['decimals'])
+            if previous is not None:
+                kpi['previous'] = _rounded(previous, kpi['decimals'])
+        elif kpi['value'] is None:
             kpi['value'] = derived[kpi['key']]
 
         value, decimals = kpi['value'], kpi['decimals']
@@ -178,30 +312,47 @@ def build_kpis(requests):
             'trend_text': f"{_format_number(abs(delta), decimals)} vs last month",
             'progress_percent': round(min(max(value / kpi['scale_max'], 0), 1) * 100),
         })
+        if no_data:
+            # Nothing to measure yet (e.g. no deliveries in this category recently): say so
+            # instead of showing 0, which would look like a real (and alarming) result.
+            kpi.update({'status': 'warning', 'display_value': '—', 'progress_percent': 0,
+                        'trend_direction': 'flat', 'trend_improving': None,
+                        'trend_text': f'No data in the last {KPI_WINDOW_DAYS} days'})
         kpis.append(kpi)
     return kpis
 
 
-def build_inventory():
-    inventory = []
-    for med in MEDICINES:
-        safety_stock = calculate_safety_stock(SERVICE_LEVEL_Z, med['demand_std_dev'], med['lead_time_days'])
-        reorder_point = calculate_reorder_point(med['avg_daily_demand'], med['lead_time_days'], safety_stock)
-        stock = med['current_stock']
-        if stock < safety_stock:
-            status = 'Critical'
-        elif stock <= reorder_point:
-            status = 'Low'
-        else:
-            status = 'Sufficient'
-        inventory.append({
-            'name': med['name'],
-            'current_stock': stock,
-            'reorder_point': round(reorder_point),
-            'safety_stock': round(safety_stock),
-            'status': status,
-        })
-    return inventory
+def stock_status(stock, safety_stock, reorder_point):
+    """Critical below safety stock, Low at or below the reorder point, otherwise Sufficient."""
+    if stock < safety_stock:
+        return 'Critical'
+    if stock <= reorder_point:
+        return 'Low'
+    return 'Sufficient'
+
+
+def _inventory_from_medicine(med):
+    """Stock, reorder point, safety stock and status for one medicine row."""
+    safety_stock = calculate_safety_stock(SERVICE_LEVEL_Z, float(med['demand_std_dev']), med['lead_time_days'])
+    reorder_point = calculate_reorder_point(float(med['avg_daily_demand']), med['lead_time_days'], safety_stock)
+    return {
+        'name': med['name'],
+        'current_stock': med['current_stock'],
+        'reorder_point': round(reorder_point),
+        'safety_stock': round(safety_stock),
+        'status': stock_status(med['current_stock'], safety_stock, reorder_point),
+    }
+
+
+def build_inventory(category='all'):
+    """Inventory table rows for the dashboard and reorder form."""
+    return [_inventory_from_medicine(med) for med in get_medicines(category)]
+
+
+def inventory_row(name):
+    """Return one medicine's inventory row (stock, reorder point, status), or None."""
+    med = find_medicine(name)
+    return _inventory_from_medicine(med) if med else None
 
 
 def build_request_rows(requests, today):
@@ -258,6 +409,9 @@ def build_alerts(kpis, request_rows, today):
     return alerts
 
 
+# ---------------------------------------------------------------------------
+# Placing orders (dashboard form and POST /api/requests)
+# ---------------------------------------------------------------------------
 
 def validate_order(form, today=None):
     """
@@ -270,7 +424,7 @@ def validate_order(form, today=None):
     errors = {}
 
     medicine = form.get('medicine', '').strip()
-    if medicine not in [m['name'] for m in MEDICINES]:
+    if find_medicine(medicine) is None:
         errors['medicine'] = 'Choose a medicine from the list.'
 
     quantity = None
@@ -282,7 +436,7 @@ def validate_order(form, today=None):
         errors['quantity'] = f'Enter a whole number between 1 and {MAX_ORDER_QUANTITY:,}.'
 
     supplier = form.get('supplier', '').strip()
-    if supplier not in SUPPLIERS:
+    if supplier not in get_supplier_names():
         errors['supplier'] = 'Choose a supplier from the list.'
 
     expected_delivery = None
@@ -308,73 +462,63 @@ def validate_order(form, today=None):
     }, {}
 
 
-def add_request(order, today=None, emergency=False):
-    """Store a validated order as a new request and return it. New orders always start as Awaiting Approval."""
-    today = today or date.today()
-    new_request = {
-        **order,
-        'id': max((r['id'] for r in REQUESTS), default=0) + 1,
-        'status': 'Awaiting Approval',
-        'request_date': today,
-        'status_since': today,
-        'emergency': emergency,
-    }
-    REQUESTS.append(new_request)
-    return new_request
+def add_request(order, today=None, emergency=False, facility_id=DEFAULT_FACILITY_ID):
+    """
+    Save a validated order and return it. New orders always start as
+    Awaiting Approval. The medicine's unit cost is copied onto the order so
+    it keeps the price paid even if the catalogue price changes later.
+    """
+    with transaction() as cur:
+        cur.execute(
+            """
+            INSERT INTO orders (medicine_id, facility_id, supplier_id, quantity, unit_cost,
+                                status, is_emergency, notes, expected_delivery)
+            SELECT m.medicine_id, %s, s.supplier_id, %s, m.unit_cost,
+                   'Awaiting Approval', %s, %s, %s
+            FROM medicines m JOIN suppliers s ON s.name = %s
+            WHERE m.name = %s
+            """,
+            (facility_id, order['quantity'], bool(emergency), order['notes'] or None,
+             order['expected_delivery'], order['supplier'], order['medicine']),
+        )
+        new_id = cur.lastrowid
+    return get_request(new_id)
 
 
-def filter_medicines_by_category(category):
-    """Filter medicines by category. 'all' returns all medicines."""
-    if category == 'all':
-        return MEDICINES
-    return [m for m in MEDICINES if m['category'] == category]
-
-
-def filter_requests_by_category(requests, category):
-    """Filter requests by medicine category."""
-    if category == 'all':
-        return requests
-    medicine_names = {m['name'] for m in filter_medicines_by_category(category)}
-    return [r for r in requests if r['medicine'] in medicine_names]
-
+# ---------------------------------------------------------------------------
+# Everything the dashboard template needs
+# ---------------------------------------------------------------------------
 
 def get_dashboard_context(category='all'):
     """Everything index.html needs, as template variables.
-    
+
     Args:
-        category: Filter by medicine category ('all', 'antibiotics', 'analgesics', 'antiretrovirals', 'vaccines')
+        category: 'all' or one of MEDICINE_CATEGORIES
     """
+    if category != 'all' and category not in MEDICINE_CATEGORIES:
+        category = 'all'
     today = date.today()
-    
-    # Filter requests by category
-    filtered_requests = filter_requests_by_category(REQUESTS, category)
-    
-    # Build KPIs from filtered requests
-    kpis = build_kpis(filtered_requests)
-    request_rows = build_request_rows(filtered_requests, today)
-    
-    # Filter medicines and inventory by category
-    filtered_medicines = filter_medicines_by_category(category)
-    
+
+    requests = get_requests(category)
+    kpis = build_kpis(requests, category)
+    request_rows = build_request_rows(requests, today)
+    inventory = build_inventory(category)
+
     return {
         'today': today,
         'metrics': kpis,
         'requests': request_rows,
         'alerts': build_alerts(kpis, request_rows, today),
-        'inventory': [inv for inv in build_inventory() if any(m['name'] == inv['name'] for m in filtered_medicines)],
-        'medicine_options': [m['name'] for m in filtered_medicines],
-        'supplier_options': SUPPLIERS,
+        'inventory': inventory,
+        'medicine_options': [item['name'] for item in inventory],
+        'supplier_options': get_supplier_names(),
         'current_category': category,
     }
-    
 
 
+# ---------------------------------------------------------------------------
 # Adding medicines (Flow 1: form -> POST /api/medicines -> inventory table)
-
-
-MEDICINE_CATEGORIES = ['analgesics', 'antibiotics', 'antidiabetics', 'antiretrovirals', 'respiratory', 'vaccines']
-MAX_NAME_LENGTH = 100
-
+# ---------------------------------------------------------------------------
 
 def _read_number(data, field, errors, minimum, whole=False):
     """Read one numeric field, adding an error message if it is missing or out of range."""
@@ -393,12 +537,21 @@ def _read_number(data, field, errors, minimum, whole=False):
         return None
 
 
+def _read_optional_cost(data, field, errors, default):
+    """A cost in rand that may be left out, in which case the default is used."""
+    if data.get(field) in (None, ''):
+        return default
+    value = _read_number(data, field, errors, minimum=0.01)
+    return round(value, 2) if value is not None else None
+
+
 def validate_medicine(data):
     """
     Validate a new medicine sent to POST /api/medicines.
 
     Returns (medicine, errors): medicine is a dict ready for add_medicine()
     when errors is empty; errors maps field name -> message.
+    unit_cost and order_cost are optional (defaults above).
     """
     errors = {}
 
@@ -416,6 +569,8 @@ def validate_medicine(data):
     avg_daily_demand = _read_number(data, 'avg_daily_demand', errors, minimum=0)
     demand_std_dev = _read_number(data, 'demand_std_dev', errors, minimum=0)
     lead_time_days = _read_number(data, 'lead_time_days', errors, minimum=1, whole=True)
+    unit_cost = _read_optional_cost(data, 'unit_cost', errors, DEFAULT_UNIT_COST)
+    order_cost = _read_optional_cost(data, 'order_cost', errors, DEFAULT_ORDER_COST)
 
     if errors:
         return None, errors
@@ -426,28 +581,155 @@ def validate_medicine(data):
         'avg_daily_demand': avg_daily_demand,
         'demand_std_dev': demand_std_dev,
         'lead_time_days': lead_time_days,
+        'unit_cost': unit_cost,
+        'order_cost': order_cost,
     }, {}
 
 
+# Fields PATCH /api/medicines/<id> may change: field -> (smallest allowed value, whole number?)
+MEDICINE_UPDATE_FIELDS = {
+    'current_stock': (0, True),
+    'avg_daily_demand': (0, False),
+    'demand_std_dev': (0, False),
+    'lead_time_days': (1, True),
+    'unit_cost': (0.01, False),
+    'order_cost': (0.01, False),
+}
+
+
+def validate_medicine_update(data):
+    """
+    Validate a partial update sent to PATCH /api/medicines/<id>.
+
+    Only the fields sent are checked and changed. Returns (changes, errors):
+    changes maps field -> new value; errors maps field -> message.
+    """
+    errors = {}
+    unknown = [field for field in data if field not in MEDICINE_UPDATE_FIELDS]
+    if unknown:
+        errors['fields'] = f"Only these can be changed: {', '.join(MEDICINE_UPDATE_FIELDS)}."
+    sent = [field for field in MEDICINE_UPDATE_FIELDS if field in data]
+    if not sent and not unknown:
+        errors['fields'] = 'Send at least one field to change.'
+
+    changes = {}
+    for field in sent:
+        minimum, whole = MEDICINE_UPDATE_FIELDS[field]
+        value = _read_number(data, field, errors, minimum=minimum, whole=whole)
+        if value is not None:
+            changes[field] = round(value, 2) if field in ('unit_cost', 'order_cost') else value
+
+    if errors:
+        return None, errors
+    return changes, {}
+
+
+def update_medicine(medicine_id, changes, facility_id=DEFAULT_FACILITY_ID):
+    """
+    Save a validated update and return the medicine as it now is.
+
+    Catalogue fields go to `medicines`. A new current_stock is treated as a
+    physical stock count at this facility, so it also feeds two KPIs:
+        - record accuracy: the count is saved in `stock_counts` against the
+          quantity the system held before (system vs counted)
+        - stockout frequency: stock reaching 0 opens a stockout event; stock
+          above 0 closes any open one
+    Everything is written in one transaction.
+    """
+    catalogue = {field: value for field, value in changes.items() if field != 'current_stock'}
+    with transaction() as cur:
+        if catalogue:
+            # Column names come only from MEDICINE_UPDATE_FIELDS above, never from the request
+            assignments = ', '.join(f"{field} = %s" for field in catalogue)
+            cur.execute(f"UPDATE medicines SET {assignments} WHERE medicine_id = %s",
+                        list(catalogue.values()) + [medicine_id])
+        if 'current_stock' in changes:
+            _record_stock_count(cur, medicine_id, facility_id, changes['current_stock'])
+    return medicine_to_json(get_medicine(medicine_id, facility_id))
+
+
+def _record_stock_count(cur, medicine_id, facility_id, counted):
+    """Save a stock count inside an open transaction (see update_medicine)."""
+    cur.execute(
+        """
+        SELECT inventory_id, quantity_on_hand FROM inventory
+        WHERE medicine_id = %s AND facility_id = %s FOR UPDATE
+        """,
+        (medicine_id, facility_id),
+    )
+    row = cur.fetchone()
+    if row is None:
+        return
+    system_quantity = row['quantity_on_hand']
+
+    cur.execute("UPDATE inventory SET quantity_on_hand = %s WHERE inventory_id = %s",
+                (counted, row['inventory_id']))
+    cur.execute(
+        """
+        INSERT INTO stock_counts (inventory_id, system_quantity, counted_quantity, counted_at)
+        VALUES (%s, %s, %s, NOW())
+        """,
+        (row['inventory_id'], system_quantity, counted),
+    )
+    if counted == 0 and system_quantity > 0:
+        cur.execute(
+            "INSERT INTO stockout_events (medicine_id, facility_id, occurred_at) VALUES (%s, %s, NOW())",
+            (medicine_id, facility_id),
+        )
+    elif counted > 0:
+        _resolve_stockouts(cur, medicine_id, facility_id)
+
+
+def _resolve_stockouts(cur, medicine_id, facility_id):
+    """Close any open stockout for this medicine at this facility (stock is back above 0)."""
+    cur.execute(
+        """
+        UPDATE stockout_events SET resolved_at = NOW()
+        WHERE medicine_id = %s AND facility_id = %s AND resolved_at IS NULL
+        """,
+        (medicine_id, facility_id),
+    )
+
+
 def medicine_exists(name):
-    """True if a medicine with this name is already stored (ignores capital letters)."""
-    return any(m['name'].lower() == name.lower() for m in MEDICINES)
+    """True if a medicine with this name is already stored (MySQL ignores capital letters here)."""
+    return fetch_one("SELECT medicine_id FROM medicines WHERE name = %s", (name,)) is not None
 
 
-def add_medicine(medicine):
-    """Store a validated medicine and return its inventory row (with reorder point and status)."""
-    MEDICINES.append(medicine)
-    row = next(item for item in build_inventory() if item['name'] == medicine['name'])
-    return {**row, 'category': medicine['category']}
+def add_medicine(medicine, facility_id=DEFAULT_FACILITY_ID):
+    """
+    Save a validated medicine and return its inventory row.
+
+    The medicine and one inventory row per facility are written in a single
+    transaction: the given stock goes to this facility, the others start at 0.
+    If any insert fails, nothing is saved.
+    """
+    with transaction() as cur:
+        cur.execute(
+            """
+            INSERT INTO medicines (name, category, unit_cost, order_cost, holding_rate,
+                                   avg_daily_demand, demand_std_dev, lead_time_days)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (medicine['name'], medicine['category'], medicine['unit_cost'], medicine['order_cost'],
+             DEFAULT_HOLDING_RATE, medicine['avg_daily_demand'], medicine['demand_std_dev'],
+             medicine['lead_time_days']),
+        )
+        medicine_id = cur.lastrowid
+        cur.execute(
+            """
+            INSERT INTO inventory (medicine_id, facility_id, quantity_on_hand)
+            SELECT %s, f.facility_id, IF(f.facility_id = %s, %s, 0)
+            FROM facilities f
+            """,
+            (medicine_id, facility_id, medicine['current_stock']),
+        )
+    return {**_inventory_from_medicine(medicine), 'category': medicine['category']}
 
 
 # ---------------------------------------------------------------------------
 # Reordering (Flow 2: EOQ recommendation -> request -> status steps -> stock update)
-
-# EOQ cost assumptions (placeholder values until real costs come from the database)
-ORDER_COST = 500               # R per order placed (admin and delivery)
-HOLDING_COST_PER_UNIT = 4      # R to store one unit for a year (storage, expiry risk)
-DAYS_PER_YEAR = 365
+# ---------------------------------------------------------------------------
 
 # Each status moves to exactly one next status. Delivered is the end.
 # A Delayed order is already on its way, so its next step is Delivered.
@@ -468,34 +750,38 @@ ACTION_LABELS = {
 }
 
 
-def find_medicine(name):
-    """Return the stored medicine with this name, or None."""
-    return next((m for m in MEDICINES if m['name'] == name), None)
+def _eoq_inputs(med):
+    """Annual demand, order cost (S) and holding cost per unit per year (H) for one medicine."""
+    annual_demand = float(med['avg_daily_demand']) * DAYS_PER_YEAR
+    order_cost = float(med['order_cost'])
+    holding_cost = round(float(med['unit_cost']) * float(med['holding_rate']), 2)
+    return annual_demand, order_cost, holding_cost
 
 
-def inventory_row(name):
-    """Return one medicine's inventory row (stock, reorder point, status), or None."""
-    return next((item for item in build_inventory() if item['name'] == name), None)
+def _eoq_quantity(med):
+    """EOQ order quantity for one medicine row, at least 1 unit."""
+    annual_demand, order_cost, holding_cost = _eoq_inputs(med)
+    return max(1, round(calculate_eoq(annual_demand, order_cost, holding_cost)))
 
 
 def recommend_order(name):
     """
-    Use the EOQ model to recommend how many units of a medicine to order.
+    Use the EOQ model to recommend how many units of a medicine to order,
+    using that medicine's own order and holding costs from the database.
 
     Returns None if the medicine does not exist.
     """
-    medicine = find_medicine(name)
-    if medicine is None:
+    med = find_medicine(name)
+    if med is None:
         return None
-    annual_demand = medicine['avg_daily_demand'] * DAYS_PER_YEAR
-    eoq = calculate_eoq(annual_demand, ORDER_COST, HOLDING_COST_PER_UNIT)
-    row = inventory_row(name)
+    annual_demand, order_cost, holding_cost = _eoq_inputs(med)
+    row = _inventory_from_medicine(med)
     return {
         'medicine': name,
-        'recommended_quantity': max(1, round(eoq)),
+        'recommended_quantity': _eoq_quantity(med),
         'annual_demand': round(annual_demand),
-        'order_cost': ORDER_COST,
-        'holding_cost': HOLDING_COST_PER_UNIT,
+        'order_cost': order_cost,
+        'holding_cost': holding_cost,
         'current_stock': row['current_stock'],
         'reorder_point': row['reorder_point'],
         'status': row['status'],
@@ -520,16 +806,81 @@ def request_to_json(r):
     }
 
 
+# Delivery status that matches each order status, once a delivery exists
+ORDER_TO_DELIVERY_STATUS = {'In Transit': 'In Transit', 'Delayed': 'Delayed', 'Delivered': 'Delivered'}
+
+
+def set_order_status(cur, order_id, new_status, sync_delivery=True):
+    """
+    Move an order to new_status inside an open transaction, keeping the
+    related records consistent:
+        - Approved:  records approved_at (used by the approval-time KPI).
+        - Ordered:   creates its delivery on the board (Scheduled).
+        - Delivered: records delivered_at and adds the quantity to the
+                     facility's stock. This can only happen once per order.
+    sync_delivery=False is used when the change came from the delivery itself.
+    """
+    cur.execute("SELECT status, expected_delivery FROM orders WHERE order_id = %s FOR UPDATE", (order_id,))
+    order = cur.fetchone()
+    if order is None or order['status'] == new_status or order['status'] == 'Delivered':
+        return
+
+    cur.execute(
+        """
+        UPDATE orders
+        SET status = %s, status_changed_at = NOW(),
+            approved_at  = IF(%s = 'Approved', NOW(), approved_at),
+            delivered_at = IF(%s = 'Delivered', NOW(), delivered_at)
+        WHERE order_id = %s
+        """,
+        (new_status, new_status, new_status, order_id),
+    )
+
+    if new_status == 'Delivered':
+        cur.execute(
+            """
+            UPDATE inventory i
+            JOIN orders o ON o.medicine_id = i.medicine_id AND o.facility_id = i.facility_id
+            SET i.quantity_on_hand = i.quantity_on_hand + o.quantity
+            WHERE o.order_id = %s
+            """,
+            (order_id,),
+        )
+        # The delivery ends any open stockout of this medicine at this facility
+        cur.execute("SELECT medicine_id, facility_id FROM orders WHERE order_id = %s", (order_id,))
+        delivered = cur.fetchone()
+        _resolve_stockouts(cur, delivered['medicine_id'], delivered['facility_id'])
+
+    if not sync_delivery:
+        return
+    if new_status == 'Ordered':
+        cur.execute(
+            """
+            INSERT IGNORE INTO deliveries (reference, order_id, eta, status)
+            VALUES (CONCAT('DEL-', 2000 + %s), %s, TIMESTAMP(%s, '12:00:00'), 'Scheduled')
+            """,
+            (order_id, order_id, order['expected_delivery']),
+        )
+    elif new_status in ORDER_TO_DELIVERY_STATUS:
+        cur.execute(
+            """
+            UPDATE deliveries
+            SET status = %s, delivered_at = IF(%s = 'Delivered', NOW(), delivered_at)
+            WHERE order_id = %s
+            """,
+            (ORDER_TO_DELIVERY_STATUS[new_status], new_status, order_id),
+        )
+
+
 def advance_request(request_id, today=None):
     """
     Move a request to its next status. When it becomes Delivered, the
-    delivered quantity is added to the medicine's current stock.
+    delivered quantity is added to the facility's stock.
 
     Returns (request, error): error is a message when the request
     cannot move (not found, or already delivered).
     """
-    today = today or date.today()
-    found = next((r for r in REQUESTS if r['id'] == request_id), None)
+    found = get_request(request_id)
     if found is None:
         return None, f'Request {request_id} was not found.'
 
@@ -537,58 +888,82 @@ def advance_request(request_id, today=None):
     if next_status is None:
         return None, f"Request {request_id} is already {found['status']}."
 
-    found['status'] = next_status
-    found['status_since'] = today
-
-    if next_status == 'Delivered':
-        medicine = find_medicine(found['medicine'])
-        if medicine is not None:
-            medicine['current_stock'] += found['quantity']
-
-    return found, None
+    with transaction() as cur:
+        set_order_status(cur, request_id, next_status)
+    return get_request(request_id), None
 
 
-# Live list endpoints (replace the mock JSON in static/mock/)
-INVENTORY_STATUSES = ('Critical', 'Low', 'Sufficient')
+# ---------------------------------------------------------------------------
+# Live list endpoints (GET /api/medicines, /api/requests, /api/kpis)
+# ---------------------------------------------------------------------------
 
-
-def medicine_to_json(medicine_id, medicine):
-    """One medicine with its EOQ-model figures, in the same shape as the old medicines.json."""
-    row = inventory_row(medicine['name'])
+def medicine_to_json(med):
+    """One medicine with its EOQ-model figures, in the shape the frontend expects."""
+    row = _inventory_from_medicine(med)
     return {
-        'id': medicine_id,
-        'name': medicine['name'],
-        'category': medicine['category'],
-        'current_stock': medicine['current_stock'],
-        'avg_daily_demand': medicine['avg_daily_demand'],
-        'demand_std_dev': medicine['demand_std_dev'],
-        'lead_time_days': medicine['lead_time_days'],
+        'id': med['medicine_id'],
+        'name': med['name'],
+        'category': med['category'],
+        'current_stock': med['current_stock'],
+        'avg_daily_demand': float(med['avg_daily_demand']),
+        'demand_std_dev': float(med['demand_std_dev']),
+        'lead_time_days': med['lead_time_days'],
         'reorder_point': row['reorder_point'],
         'safety_stock': row['safety_stock'],
         'status': row['status'],
     }
 
 
-def list_medicines(category='all', status=None):
-    """All medicines as JSON rows, optionally filtered by category and stock status."""
-    rows = [medicine_to_json(number, m) for number, m in enumerate(MEDICINES, start=1)]
+# The same rule as stock_status(), written in SQL so MySQL can filter by status:
+#   safety stock  = Z * demand std dev * sqrt(lead time)
+#   reorder point = daily demand * lead time + safety stock
+STOCK_STATUS_SQL = f"""
+    CASE
+        WHEN COALESCE(i.quantity_on_hand, 0) < {SERVICE_LEVEL_Z} * m.demand_std_dev * SQRT(m.lead_time_days)
+            THEN 'Critical'
+        WHEN COALESCE(i.quantity_on_hand, 0) <= m.avg_daily_demand * m.lead_time_days
+                + {SERVICE_LEVEL_Z} * m.demand_std_dev * SQRT(m.lead_time_days)
+            THEN 'Low'
+        ELSE 'Sufficient'
+    END
+"""
+
+
+def _page(sql, params, order_by, page, size):
+    """
+    Run one page of a query in MySQL and count every matching row.
+
+    Filtering, counting and paging all happen in the database (COUNT(*) and
+    LIMIT/OFFSET), so only `size` rows are sent to Python however big the
+    table grows. Returns (rows, total).
+    """
+    total = fetch_one(f"SELECT COUNT(*) AS total FROM ({sql}) AS matching", params)['total']
+    rows = fetch_all(f"{sql} ORDER BY {order_by} LIMIT %s OFFSET %s", params + [size, (page - 1) * size])
+    return rows, int(total)
+
+
+def list_medicines(category='all', status=None, page=1, size=10, facility_id=DEFAULT_FACILITY_ID):
+    """One page of medicines as JSON rows, filtered by category and stock status. Returns (rows, total)."""
+    sql, params = MEDICINE_SELECT, [facility_id]
     if category != 'all':
-        rows = [r for r in rows if r['category'] == category]
+        sql += " AND m.category = %s"
+        params.append(category)
     if status:
-        rows = [r for r in rows if r['status'] == status]
-    return rows
+        sql += f" AND ({STOCK_STATUS_SQL}) = %s"
+        params.append(status)
+    rows, total = _page(sql, params, 'm.name', page, size)
+    return [medicine_to_json(med) for med in rows], total
 
 
-def list_requests(status=None):
-    """All reorder requests as JSON rows, optionally filtered by status."""
-    rows = [request_to_json(r) for r in REQUESTS]
-    if status:
-        rows = [r for r in rows if r['status'] == status]
-    return rows
+def list_requests(status=None, page=1, size=10):
+    """One page of reorder requests as JSON rows, newest first. Returns (rows, total)."""
+    sql, params = _requests_query(status=status)
+    rows, total = _page(sql, params, 'o.requested_at DESC, o.order_id DESC', page, size)
+    return [request_to_json(_request_from_row(row)) for row in rows], total
 
 
 def list_kpis(category='all'):
-    """The dashboard KPIs, calculated live from the current requests."""
+    """The dashboard KPIs, calculated from the current requests."""
     fields = ('key', 'name', 'value', 'display_value', 'previous', 'target', 'unit', 'status',
               'progress_percent', 'trend_direction', 'trend_improving', 'trend_text', 'target_text', 'description')
     kpis = build_kpis(filter_requests_by_category(REQUESTS, category))
@@ -606,6 +981,8 @@ def improvement_percent(kpi):
         return 0
     change = (kpi['value'] - kpi['previous']) / kpi['previous'] * 100
     return round(-change if kpi['goal'] == 'decrease' else change, 1)
+    kpis = build_kpis(get_requests(category), category)
+    return [{field: kpi[field] for field in fields} for kpi in kpis]
 
 
 # ---------------------------------------------------------------------------
@@ -620,23 +997,26 @@ def _metric(key, name, value, unit, description, status='good'):
 
 def live_metrics(category='all'):
     """
-    Totals and supply chain KPIs worked out from the data right now, so they
-    change as soon as stock, medicines or orders change.
+    Totals and supply chain KPIs worked out from the database right now, so
+    they change as soon as stock, medicines or orders change.
     """
-    names = {m['name'] for m in filter_medicines_by_category(category)}
-    inventory = [item for item in build_inventory() if item['name'] in names]
-    requests = filter_requests_by_category(REQUESTS, category)
+    medicines = get_medicines(category)
+    inventory = [_inventory_from_medicine(med) for med in medicines]
+    requests = get_requests(category)
 
-    to_restock = [item for item in inventory if item['status'] != 'Sufficient']
+    to_restock = [med for med, item in zip(medicines, inventory) if item['status'] != 'Sufficient']
     critical = [item for item in inventory if item['status'] == 'Critical']
     open_requests = [r for r in requests if r['status'] != 'Delivered']
-    eoq_to_order = sum(recommend_order(item['name'])['recommended_quantity'] for item in to_restock)
+    eoq_to_order = sum(_eoq_quantity(med) for med in to_restock)
+    stock_value = sum(med['current_stock'] * float(med['unit_cost']) for med in medicines)
 
     return [
         _metric('medicines_tracked', 'Medicines tracked', len(inventory), 'items',
                 'Medicines in the inventory.'),
         _metric('units_in_stock', 'Units in stock', sum(item['current_stock'] for item in inventory), 'units',
                 'All medicines combined.'),
+        _metric('stock_value', 'Stock value', round(stock_value), 'rand',
+                'Units in stock × unit cost.'),
         _metric('items_to_restock', 'Items to restock', len(to_restock), 'items',
                 'At or below their reorder point.', 'warning' if to_restock else 'good'),
         _metric('critical_stock', 'Critical stock', len(critical), 'items',
