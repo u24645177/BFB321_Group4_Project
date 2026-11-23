@@ -110,8 +110,19 @@ MedSync uses **MySQL 8.0**. `database/schema.sql` creates the `medsync` database
    ```
    Run the same two `source` commands again at any time to reset the demo data.
 
-### Demo data and sign-in
-The prototype has no sign-in screen: open http://localhost:5001 directly. The seed data includes 8 medicines, 3 Tshwane hospitals, 4 suppliers, 24 orders and 60 days of delivery, stockout and stock-count history, with dates relative to today so the KPIs always look current. Three users are seeded for the planned role-based sign-in (password `MedSync2026!`, stored only as a hash): `admin@medsync.test`, `procurement@medsync.test` and `pharmacist@medsync.test`.
+### Demo data
+The seed data includes 8 medicines, 3 Tshwane hospitals, 4 suppliers, 24 orders and 60 days of delivery, stockout and stock-count history, with dates relative to today so the KPIs always look current.
+
+### Test sign-in credentials
+Open http://localhost:5001 and click **Sign in** (top right), then use any of these seeded test accounts. All three use the password **`MedSync2026!`** (stored in the database only as a Werkzeug hash).
+
+| Email | Name | Role |
+| :--- | :--- | :--- |
+| `admin@medsync.test` | Thandi Mokoena | Admin |
+| `procurement@medsync.test` | Pieter van der Merwe | Procurement officer |
+| `pharmacist@medsync.test` | Lerato Nkosi | Pharmacist (Steve Biko Academic Hospital) |
+
+Sign-in uses Flask's signed session cookie (`routes/auth.py`); the header then shows the signed-in user's name, role and facility, and failed sign-ins are logged. In this prototype, sign-in is not yet enforced: pages and the API also work without signing in, and the stored roles do not yet limit what a user can do. Enforcing sign-in and role-based permissions is the planned next step.
 
 ## Database Schema and ERD
 
@@ -143,8 +154,10 @@ requirements.txt       Python dependencies (pinned versions)
 .env.example           Template for the .env settings file (copy to .env; never commit .env)
 routes/pages.py        pages_bp: HTML pages (/, /reorder, /tracking, /kpis)
 routes/api.py          api_bp: JSON endpoints under /api
+routes/auth.py         auth_bp: sign-in and sign-out with the seeded test accounts
 data/dashboard.py      Medicines, orders, KPIs and alerts (SQL queries and validation)
 data/deliveries.py     Deliveries and facilities (SQL queries and validation)
+data/users.py          Checks a sign-in against the users table (hashed passwords)
 models/eoq.py          EOQ, safety stock and reorder point
 database/              schema.sql and seed.sql
 templates/, static/    HTML templates, CSS and JavaScript
@@ -163,7 +176,7 @@ Settings come from `.env` (see `.env.example`); nothing secret is stored in the 
 ```
 python -m pytest tests/
 ```
-96 automated tests cover the EOQ, safety stock and reorder point calculations (`test_eoq.py`), input validation and the stock status rule (`test_validation.py`) and API routing, error responses and request validation (`test_api.py`). None of them needs MySQL to be running.
+106 automated tests cover the EOQ, safety stock and reorder point calculations (`test_eoq.py`), input validation and the stock status rule (`test_validation.py`), API routing, error responses and request validation (`test_api.py`) and sign-in (`test_auth.py`). None of them needs MySQL to be running.
 
 ## Backup, Restore and Rollback
 Full instructions, with commands for Windows PowerShell, are in [docs/backup-restore.md](docs/backup-restore.md). In short:
