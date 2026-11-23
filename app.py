@@ -5,6 +5,7 @@ from errors import register_error_handlers
 from logging_setup import setup_logging
 from routes.pages import pages_bp
 from routes.api import api_bp
+from routes.auth import auth_bp
 import db
 
 # Create Flask app and load settings for the current environment (config.py)
@@ -23,6 +24,7 @@ db.init_app(app)
 #   api_bp   -> JSON endpoints (all start with /api)
 app.register_blueprint(pages_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(auth_bp)
 
 
 # Run the app

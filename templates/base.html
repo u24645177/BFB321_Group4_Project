@@ -110,14 +110,27 @@
                 </div>
                 {% endif %}
 
+                {% if current_user %}
                 <div class="profile">
-                    <!-- TODO: Replace with the logged-in user's details once authentication exists (Step 4) -->
-                    <span class="avatar" aria-hidden="true">U</span>
+                    <!-- The signed-in user, from routes/auth.py -->
+                    <span class="avatar" aria-hidden="true">{{ current_user.name[:1] }}</span>
+                    <div class="profile-text">
+                        <span class="profile-greeting">Hello, {{ current_user.name.split()[0] }}!</span>
+                        <span class="profile-name">{{ current_user.role_label }}{% if current_user.facility %} · {{ current_user.facility }}{% endif %}</span>
+                    </div>
+                    <form method="post" action="{{ url_for('auth.logout') }}" class="ms-3">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Sign out</button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="profile">
+                    <span class="avatar" aria-hidden="true">?</span>
                     <div class="profile-text">
                         <span class="profile-greeting">Hello!</span>
-                        <span class="profile-name">Username</span>
+                        <a class="profile-name" href="{{ url_for('auth.login', next=request.full_path) }}">Sign in</a>
                     </div>
                 </div>
+                {% endif %}
             </header>
             {% endblock %}
 
