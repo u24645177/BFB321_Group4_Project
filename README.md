@@ -61,8 +61,11 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
 4. Create your settings file from the template, then open `.env` and fill in your MySQL user and password:
    - Windows: `copy .env.example .env`
    - Mac/Linux: `cp .env.example .env`
-
-   In `.env`, set `MYSQL_USER` and `MYSQL_PASSWORD` to the project user you create in Database Setup below, and set `SECRET_KEY` to any long random string. A suitable one can be generated with:
+   ```
+   MYSQL_USER=medsync_app
+   MYSQL_PASSWORD=the-password-you-chose-in-Database-Setup
+   SECRET_KEY=any-long-random-string
+   ```
    ```
    python -c "import secrets; print(secrets.token_hex(32))"
    ```
@@ -85,6 +88,8 @@ Repository: https://github.com/u24645177/BFB321_Group4_Project
 MedSync uses **MySQL 8.0**. `database/schema.sql` creates the `medsync` database and its tables; `database/seed.sql` fills every table with demo data.
 
 1. Log in to MySQL as root (Windows: the full path is usually `"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`):
+
+   You will be asked for the root password, the one you chose when you installed MySQL. It is not the project password you create in the next step.
    ```
    mysql -u root -p
    ```
@@ -95,6 +100,7 @@ MedSync uses **MySQL 8.0**. `database/schema.sql` creates the `medsync` database
    GRANT ALL PRIVILEGES ON medsync.* TO 'medsync_app'@'localhost';
    FLUSH PRIVILEGES;
    ```
+   Replace choose-a-password with a password of your own, and use the same password for MYSQL_PASSWORD in .env. If MySQL says the user already exists, reset it with ALTER USER 'medsync_app'@'localhost' IDENTIFIED BY 'your-password'; and then run the GRANT and FLUSH PRIVILEGES lines again.
 
 3. From the project root, build the tables and load the demo data:
    ```sql
