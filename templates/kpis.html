@@ -1,20 +1,39 @@
 {% extends "base.html" %}
 {% from "components/macros.html" import kpi_card, status_badge, page_header, delivery_summary_cards %}
-{% set tones = {'good': 'success', 'warning': 'warning', 'critical': 'danger'} %}
+{% set status_labels = {'good': 'On target', 'warning': 'Needs attention', 'critical': 'Critical'} %}
 
 {% block title %}KPI Dashboard - MedSync{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+{% endblock %}
 
 {% block content %}
 {{ page_header('KPI Dashboard', 'What’s the performance looking like this month?') }}
 
-<!-- KPI cards -->
-<section class="kpi-grid mb-section" aria-label="Key performance indicators">
-    {% for k in kpis %}
-    <div>
-    {{ kpi_card(k.name, k.display_value ~ ' ' ~ k.unit, k.target_text, tones[k.status]) }}
-    </div>
+<!-- KPI cards: same design as the dashboard cards (styles in static/css/dashboard.css) -->
+<ul class="kpi-grid kpi-page-grid plain-list mb-section" aria-label="Key performance indicators">
+    {% for kpi in kpis %}
+    <li class="kpi-card kpi-{{ kpi.status }}">
+        <p class="kpi-name">{{ kpi.name }}</p>
+        <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
+        <div class="kpi-bar" aria-hidden="true">
+        <span data-progress="{{ kpi.progress_percent }}"></span>
+        </div>
+        <div class="kpi-meta">
+            <span class="kpi-status">{{ status_labels[kpi.status] }}</span>
+            {% if kpi.trend_direction == 'flat' %}
+            <span class="kpi-trend">No change</span>
+            {% else %}
+            <span class="kpi-trend {{ 'is-improving' if kpi.trend_improving else 'is-worsening' }}">
+                {{ '↑' if kpi.trend_direction == 'up' else '↓' }} {{ kpi.trend_text }}
+            </span>
+            {% endif %}
+        </div>
+        <p class="kpi-desc">{{ kpi.target_text }}</p>
+    </li>
     {% endfor %}
-</section>
+</ul>
 
 
 <!-- Delivery KPIs: calculated from the latest delivery updates on the tracking board (Flow 3) -->

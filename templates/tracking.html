@@ -3,6 +3,10 @@
 
 {% block title %}Order Tracking - MedSync{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
 {{ page_header('Delivery Board', 'Live delivery tracking: Real-time view of all shipments - status, location, and any issues') }}
 

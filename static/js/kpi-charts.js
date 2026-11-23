@@ -4,6 +4,13 @@
 //   Figure 2: deliveries by status            - GET /api/deliveries
 //   Figure 3: before/after KPIs + Table 1     - GET /api/kpis
 
+
+// Fill the progress bars on the KPI cards (width comes from data-progress in kpis.html)
+document.querySelectorAll('.kpi-bar span[data-progress]').forEach(bar => {
+  bar.style.width = bar.dataset.progress + '%';
+});
+
+
 (() => {
     const stockCanvas = document.getElementById('stock-chart');
     if (!stockCanvas) return;   // only runs on the KPI page
