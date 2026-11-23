@@ -18,7 +18,7 @@
         <p class="kpi-name">{{ kpi.name }}</p>
         <p class="kpi-value">{{ kpi.display_value }}<span class="kpi-unit">{{ kpi.unit }}</span></p>
         <div class="kpi-bar" aria-hidden="true">
-            <span style="width: {{ kpi.progress_percent }}%"></span>
+        <span data-progress="{{ kpi.progress_percent }}"></span>
         </div>
         <div class="kpi-meta">
             <span class="kpi-status">{{ status_labels[kpi.status] }}</span>
